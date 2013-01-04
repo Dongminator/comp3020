@@ -1,8 +1,11 @@
-comp3020
-========
-
-my 3rd year project
-
-
-
-CLONE
+1. Use Git bash to clone the project.
+2. Open Eclipse. File -> New -> Other... -> PyDev -> Google App Engine Project
+3. Change something.
+4. Test Run Local. Make sure project can run locally. 
+5. Upload to Google App Engine. 
+6. Commit to Git. 
+	$ git status -- to check status
+	$ git add -- to add files including ones that have been changed
+	$ git commit -m "message"
+	$ git push
+7. DONE
