@@ -2,7 +2,7 @@
 ## Eclipse
 #################
 .metadata/
-
+test/
 *.pydevproject
 .project
 .metadata
