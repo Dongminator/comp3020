@@ -9,3 +9,6 @@
 	$ git commit -m "message"
 	$ git push
 7. DONE
+
+
+Facebook Graph API: "primary way to get data in and out of Facebook's social graph". https://developers.facebook.com/docs/getting-started/graphapi/

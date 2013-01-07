@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+
+<head>
+	<link rel="stylesheet" type="text/css" href="static/css/base.css">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	{% block head %}
+	{% endblock %}
+	<title>{% block title %}Route Sharing and Planning{% endblock %}</title>
+	
+	{% block scripts_in_head %}
+	{% endblock %}
+</head>
+
+{% block bodytag %}
+<body>
+{% endblock %}
+	<div id="container">
+		<div id="fb-root"></div>
+		{% block scripts_in_body %}
+		<!-- Here is the scripts of the page. -->
+		{% endblock %}
+		
+		<div id="navigation">
+			{% block navigation %}
+			<!-- Here is the navigation of the page. -->
+			<p>Navigation content here</p>
+			{% endblock %}
+		</div>
+		
+		<div id="content">
+			{% block content %}
+			<!-- Here is the content of the page. -->
+			{% endblock %}
+		</div>
+	</div>
+</body>
+</html>

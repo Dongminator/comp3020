@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" type="text/css" href="static/css/home.css">
+{% endblock %}
+{% block title %}Home{% endblock %}
+
+
+{% block scripts_in_head %}
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCHOO41I21tKSMCzpoXI0Aizz39epDs2g&sensor=true"></script>
+<script src="static/googlemap.js"></script>
+{% endblock %}
+
+
+{% block bodytag %}
+<body onload="initialize()">
+{% endblock %}
+
+
+{% block scripts_in_body %}
+<script src="static/main.js"></script>
+{% endblock %}
+		
+{% block navigation %}
+<button id="fb-logout" onclick="logout()">Logout</button>
+{% endblock %}
+
+
+
+{% block content %}
+<div id="map"></div>
+<div id="feed">
+	<p>This is home page</p>
+	<button onclick="getPhoto()"></button>
+</div>
+{% endblock %}
+
+
