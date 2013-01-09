@@ -84,17 +84,19 @@ function get_photos (url) {
 		console.log(response);
 		output_photos(response);
 
-		if (response.photos) {
+		if (response.photos) { // first page of photos. 
 			if (response.photos.paging.next) {
 				new_url = response.photos.paging.next.substring(26);
+				console.log(new_url);
+				get_photos(new_url); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			}
-		} else {
+		} else { // not first page -> 2,3,4... pages. Only have one data field. 
 			if (response.paging.next) {
 				new_url = response.paging.next.substring(26);
+				console.log(new_url);
+				get_photos(new_url); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			}
 		}
-		console.log(new_url);
-		get_photos(new_url); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 		
 	});
 }
