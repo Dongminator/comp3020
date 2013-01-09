@@ -18,12 +18,17 @@ body{
 	background-image:none;
 	background-position:0 -138px;
 	background-repeat:repeat-x;
-	font-size:24px;
 	height:5%;
 	opacity:1;
 	position:fixed;
 	top:0;
 	width:100%;
+	display: inline;
+}
+
+/* Set Paragraph in navigation to inline. Otherwise, newline will be added after each p tag*/
+p.navigation{
+	display: inline;	
 }
 
 #content{
