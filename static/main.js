@@ -101,6 +101,12 @@ function get_photos (url) {
 	});
 }
 
+
+var places = [];
+
+/*
+ * TODO: should let user know when the photo loading process is finished. 
+ */
 function output_photos (response) {
 	var photos = null;
 	
@@ -117,6 +123,7 @@ function output_photos (response) {
 		var created_time = photo.created_time;
 		var created_time_millisecond = Date.parse(created_time);
 		
+		
 		if (created_time_millisecond > milli_second) {
 			var img = document.createElement("img");
 			url = photo.images[4].source; // TODO size of photo
@@ -124,6 +131,15 @@ function output_photos (response) {
 			var src = document.getElementById("feed");
 			src.appendChild(img);
 			count = count + 1;
+			
+			/*
+			 * TODO: location should be stored in the database with the number of visits. 
+			 * If user manually modifies the location i.e. drag the marker, the location information should be overwriten and stored in the DB.
+			 */
+			if (photo.place) { // Check place property is set for the photo.
+				var place = photo.place; // load the place fields. (include .lat, .long, .zip etc)
+				places.push(place);
+			} 
 		}
 
 	}

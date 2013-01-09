@@ -6,7 +6,9 @@
 
 
 {% block scripts_in_head %}
+<script src="static/main.js"></script>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCHOO41I21tKSMCzpoXI0Aizz39epDs2g&sensor=true"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true"></script>
 <script src="static/googlemap.js"></script>
 {% endblock %}
 
@@ -17,7 +19,6 @@
 
 
 {% block scripts_in_body %}
-<script src="static/main.js"></script>
 {% endblock %}
 		
 {% block navigation %}
@@ -30,7 +31,8 @@
 <div id="map"></div>
 <div id="feed">
 	<p>This is home page</p>
-	<button onclick="getPhoto()"></button>
+	<button onclick="getPhoto()">Get photo</button>
+	<button onclick="addHeatmapLayer()">Add heat map layer</button>
 </div>
 {% endblock %}
 
