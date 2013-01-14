@@ -21,7 +21,6 @@ window.fbAsyncInit = function() {
 			// connected
 			document.getElementById('fb-logout').style.display = 'block';
 			access_token = response.authResponse.accessToken
-			testAPI();
 		} else {
 			// Redirect to login.html
 			window.location = "/login";
@@ -153,3 +152,102 @@ function output_photos (response) {
 	js.src = "//connect.facebook.net/en_US/all.js";
 	ref.parentNode.insertBefore(js, ref);
 }(document));
+
+
+function create_route () {
+	$("#create-route-dialog").dialog({ 
+		width: 550,
+		height: 400,
+		draggable: false,
+		buttons: {
+			Create: function(){
+				
+				var datepicker_date = $( "#create-route-datapicker" ).datepicker( "getDate" ); // Get Date from datepicker. return "Tue Jan 01 2013 00:00:00 GMT+0000 (GMT Standard Time)"
+				
+				var timezone_tag = document.getElementById("timezone"); // #timezone select tag
+				var timezone_value = timezone_tag.options[timezone_tag.selectedIndex].value; // Timezone value. return "00:00,1"
+				
+				var offset_int = parseInt(timezone_value.split(":")[0]); // Get "00" then convert string to int
+				
+				var utc = datepicker_date.getTime() + (datepicker_date.getTimezoneOffset() * 60000); // Return 1356998400000
+				
+				var actual_date = new Date(utc - (3600000*offset_int)); // Now you have actual Date with correct timezone. return "Mon Dec 31 2012 16:00:00 GMT+0000 (GMT Standard Time) "
+				console.log(actual_date);
+				
+				//TODO convert this number to facebook date format. then get photos after that Date.
+				
+				$( this ).dialog( "close" ); // Close dialog
+			},
+			Cancel: function(){
+				$( this ).dialog( "close" ); // Close dialog
+			}
+		}
+	});
+	
+	// Datapicker from jQuery UI libruary
+	$("#create-route-datapicker").datepicker({
+	    dateFormat: 'yy-mm-dd '
+	});
+	
+	calculate_time_zone();
+}
+
+
+
+// The next two functions (calculate_time_zone & convert) by Josh Fraser (http://www.onlineaspect.com)
+function calculate_time_zone() {
+	var rightNow = new Date();
+	var jan1 = new Date(rightNow.getFullYear(), 0, 1, 0, 0, 0, 0);  // jan 1st
+	var june1 = new Date(rightNow.getFullYear(), 6, 1, 0, 0, 0, 0); // june 1st
+	var temp = jan1.toGMTString();
+	var jan2 = new Date(temp.substring(0, temp.lastIndexOf(" ")-1));
+	temp = june1.toGMTString();
+	var june2 = new Date(temp.substring(0, temp.lastIndexOf(" ")-1));
+	var std_time_offset = (jan1 - jan2) / (1000 * 60 * 60);
+	var daylight_time_offset = (june1 - june2) / (1000 * 60 * 60);
+	var dst;
+	if (std_time_offset == daylight_time_offset) {
+		dst = "0"; // daylight savings time is NOT observed
+	} else {
+		// positive is southern, negative is northern hemisphere
+		var hemisphere = std_time_offset - daylight_time_offset;
+		if (hemisphere >= 0)
+			std_time_offset = daylight_time_offset;
+		dst = "1"; // daylight savings time is observed
+	}
+	var i;
+	// check just to avoid error messages
+	if (document.getElementById('timezone')) {
+		for (i = 0; i < document.getElementById('timezone').options.length; i++) {
+			if (document.getElementById('timezone').options[i].value == convert(std_time_offset)+","+dst) {
+				document.getElementById('timezone').selectedIndex = i;
+				break;
+			}
+		}
+	}
+}
+
+function convert(value) {
+	var hours = parseInt(value);
+	value -= parseInt(value);
+	value *= 60;
+	var mins = parseInt(value);
+	value -= parseInt(value);
+	value *= 60;
+	var secs = parseInt(value);
+	var display_hours = hours;
+	// handle GMT case (00:00)
+	if (hours == 0) {
+		display_hours = "00";
+	} else if (hours > 0) {
+		// add a plus sign and perhaps an extra 0
+		display_hours = (hours < 10) ? "+0"+hours : "+"+hours;
+	} else {
+		// add an extra 0 if needed 
+		display_hours = (hours > -10) ? "-0"+Math.abs(hours) : hours;
+	}
+
+	mins = (mins < 10) ? "0"+mins : mins;
+	return display_hours+":"+mins;
+}
+
