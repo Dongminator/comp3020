@@ -126,18 +126,16 @@
 				</select> 
 				
 				<label for="start_label" class="input_label">Start:</label>
-				<div class="label_input_wrapper">
+				<div id="start_div" class="label_input_wrapper">
 					<input id="start_input" type="text" name="route_title" />
 				</div>
 
-				<div id="via_location"></div>
-				
 				<label for="end_label" class="input_label">End:</label>
 				<div class="label_input_wrapper">
 					<input id="end_input" type="text" name="route_title" />
 				</div>
 				
-				<a href="">Via</a>
+				<a href="#" onclick="addViaPointInputBox()">Via</a>
 			</fieldset>
 	</form>
 </div>

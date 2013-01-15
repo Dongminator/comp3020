@@ -227,8 +227,9 @@ function populate_google_map (response, date_in_millisecond) {
 	ref.parentNode.insertBefore(js, ref);
 }(document));
 
-
+var viaPoints = 0;
 function create_route () {
+	viaPoints = 0;
 	$("#create-route-dialog").dialog({ 
 		width: 550,
 		height: 400,
@@ -274,6 +275,21 @@ function create_route () {
 }
 
 
+function addViaPointInputBox () {
+	
+	
+//	<label for="via1" class="via1_label">Via:</label>
+//	<div class="label_input_wrapper">
+//		<input id="via1_input" type="text" name="via1" />
+//	</div>
+	var label="<label for=\"via" + viaPoints + "\" class=\"input_label\">Via:</label>";                    // Create element with HTML
+	var div="<div class=\"label_input_wrapper\"><input id=\"via" + viaPoints + "_input\" class=\"via_input\" type=\"text\" name=\"via1\" /></div>" // Create with jQuery
+	$("#start_div").after(label, div);          // Insert new elements after img
+	
+	viaPoints = viaPoints + 1;
+	
+	console.log($("start_div"));
+}
 
 // The next two functions (calculate_time_zone & convert) by Josh Fraser (http://www.onlineaspect.com)
 function calculate_time_zone() {

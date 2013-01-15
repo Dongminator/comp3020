@@ -29,7 +29,7 @@
 	padding-right: .5em;
 }
 
-#route_title_input, #create-route-datapicker, #start_input, #end_input {
+#route_title_input, #create-route-datapicker, #start_input, #end_input, .via_input {
 	width: 100%;
 }
 
