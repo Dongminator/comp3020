@@ -18,6 +18,7 @@
 <script src="static/main.js"></script>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCHOO41I21tKSMCzpoXI0Aizz39epDs2g&sensor=true"></script>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?libraries=places&sensor=false"></script>
 <script src="static/googlemap.js"></script>
 
 {% endblock %}
@@ -57,15 +58,19 @@
 <div id="create-route-dialog" class="dialog" title="Create new route">
 	<form>
 		<fieldset>
-			<label for="category">Title:</label> 
-			<input type="text" name="cvname" id="cvname" class="text ui-widget-content ui-corner-all" />
-			<br>
-			<label for="category">Start date:</label> 
 			
-			<input id="create-route-datapicker" class="datepicker" type="text" size="30" /> 
+			<label for="route_title_input" class="input_label">Title:</label> 
+			<div class="label_input_wrapper">
+				<input id="route_title_input" type="text" name="route_title" />
+			</div>
+			
+			<label for="create-route-datapicker" class="input_label">Start date:</label>
+			<div class="label_input_wrapper">
+				<input id="create-route-datapicker" class="datepicker" type="text" size="20" /> 
+			</div>
 			
 			<!-- The following code copied from http://www.onlineaspect.com/2007/06/08/auto-detect-a-time-zone-with-javascript/ -->
-			<select name="timezone" id="timezone" style="width: 350px">
+			<select name="timezone" id="timezone" style="width: 100%">
 					<option value="-12:00,0">(-12:00) International Date Line West</option>
 					<option value="-11:00,0">(-11:00) Midway Island, Samoa</option>
 					<option value="-10:00,0">(-10:00) Hawaii</option>
@@ -118,7 +123,21 @@
 					<option value="+12:00,1">(+12:00) Auckland, Wellington</option>
 					<option value="+12:00,0">(+12:00) Fiji, Kamchatka, Marshall Is.</option>
 					<option value="+13:00,0">(+13:00) Nuku'alofa</option>
-				</select>
+				</select> 
+				
+				<label for="start_label" class="input_label">Start:</label>
+				<div class="label_input_wrapper">
+					<input id="start_input" type="text" name="route_title" />
+				</div>
+
+				<div id="via_location"></div>
+				
+				<label for="end_label" class="input_label">End:</label>
+				<div class="label_input_wrapper">
+					<input id="end_input" type="text" name="route_title" />
+				</div>
+				
+				<a href="">Via</a>
 			</fieldset>
 	</form>
 </div>

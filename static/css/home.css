@@ -16,3 +16,25 @@
 .dialog {
     display: none;
 }
+
+
+
+.input_label {
+	float: left  ;      
+	padding:5px 0;
+}
+
+.label_input_wrapper {
+	overflow: hidden;
+	padding-right: .5em;
+}
+
+#route_title_input, #create-route-datapicker, #start_input, #end_input {
+	width: 100%;
+}
+
+/* Important to change z-index. Otherwise place autocompletion will not show. */
+.pac-container {
+    z-index: 1200 !important;
+}
+

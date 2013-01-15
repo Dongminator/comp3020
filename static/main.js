@@ -4,6 +4,7 @@
 
 // Only login page will invoke login function.
 
+// TODO: ISSUE: if more than 1 album is fetched, photos from diff albums are mixed. 
 var access_token;
 
 window.fbAsyncInit = function() {
@@ -42,10 +43,8 @@ function logout() {
 }
 
 var album_ids = new Array();
-var compare_date = "2012-12-31T23:59:59+0000";
-var milli_second = Date.parse(compare_date);
 
-function testAPI() {
+function testAPI(date_in_millisecond) {
 	console.log('Welcome!  Fetching your information.... ');
 	FB.api('/me?fields=albums', function(response) {
 		
@@ -58,7 +57,7 @@ function testAPI() {
 			element = data_array[i];
 			date = element.updated_time;
 			var update_time_in_milliseconds = Date.parse(date);
-			if (update_time_in_milliseconds > milli_second) { // photo date is after 12.31
+			if (update_time_in_milliseconds > date_in_millisecond) { // photo date is after 12.31
 				console.log(element.name + ' album ' + element.id + ' updated after new year: ' + date + '.');
 				album_ids.push(element.id);
 			}
@@ -69,31 +68,33 @@ function testAPI() {
 		
 		for (var i = 0; i < number_of_albums; i++) {
 			album = album_ids[i];
-			get_photos('/' + album + '?fields=photos');
+			get_photos(('/' + album + '?fields=photos'), date_in_millisecond);
 		}
-		
 	});
 }
 
 var count = 0;
 
-
-function get_photos (url) {
+function get_photos (url, date_in_millisecond) {
 	FB.api(url, function(response) {
 		console.log(response);
-		output_photos(response);
+//		output_photos(response, date_in_millisecond);
 
+		
+		populate_google_map(response, date_in_millisecond);
+		
+		
 		if (response.photos) { // first page of photos. 
-			if (response.photos.paging.next) {
+			if(response.photos.paging && response.photos.paging.next) {
 				new_url = response.photos.paging.next.substring(26);
 				console.log(new_url);
-				get_photos(new_url); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+				get_photos(new_url, date_in_millisecond); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			}
 		} else { // not first page -> 2,3,4... pages. Only have one data field. 
 			if (response.paging.next) {
 				new_url = response.paging.next.substring(26);
 				console.log(new_url);
-				get_photos(new_url); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+				get_photos(new_url, date_in_millisecond); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			}
 		}
 		
@@ -105,8 +106,9 @@ var places = [];
 
 /*
  * TODO: should let user know when the photo loading process is finished. 
+ * TODO: don't add another img tag. Add to map marker. NOTE: milli_second needs to be changed.
  */
-function output_photos (response) {
+function output_photos (response, date_in_millisecond) {
 	var photos = null;
 	
 	if (response.photos) {
@@ -123,7 +125,7 @@ function output_photos (response) {
 		var created_time_millisecond = Date.parse(created_time);
 		
 		
-		if (created_time_millisecond > milli_second) {
+		if (created_time_millisecond > date_in_millisecond) {
 			var img = document.createElement("img");
 			url = photo.images[4].source; // TODO size of photo
 			img.src = url;
@@ -143,6 +145,78 @@ function output_photos (response) {
 
 	}
 }
+
+
+var last_location = null;
+function populate_google_map (response, date_in_millisecond) {
+	var photos = null;
+	
+	if (response.photos) {
+		photos = response.photos.data;
+	} else {
+		photos = response.data;
+	}
+
+	var number_of_photos = photos.length;
+	var photo = null;
+	
+	for (var j = 0; j < number_of_photos; j++) {
+		photo = photos[j];
+		var created_time = photo.created_time;
+		var created_time_millisecond = Date.parse(created_time);
+		
+		if (created_time_millisecond > date_in_millisecond) {
+			
+			/*
+			 * TODO: PROCESS:
+			 * 1. check if location set from FB
+			 *  -> exist: check if marker at location set. 
+			 *  	-> set: reset
+			 *  	-> not set: set new marker
+			 *  -> not exist: place this image at last location. REQUIRE: store last location.
+			 *  	-> if last location does not exist: set a flag?
+			 *  
+			 *  THIS PROCESS IS PAUSED. WAIT FOR ROUTE TO BE COMPLETED
+			 */
+			
+			if (photo.place) { // Place is set
+				googlemap_set_marker(photo.place, false);
+				last_location = photo.place;
+			} else {
+//				if (last_location) {
+//					googlemap_set_marker(photo.place, last_location);
+//				}
+			}
+			
+			url = photo.images[4].source; // TODO size of photo
+			
+			
+			count = count + 1;
+			
+			/*
+			 * TODO: location should be stored in the database with the number of visits. 
+			 * If user manually modifies the location i.e. drag the marker, the location information should be overwriten and stored in the DB.
+			 */
+			if (photo.place) { // Check place property is set for the photo.
+				var place = photo.place; // load the place fields. (include .lat, .long, .zip etc)
+				places.push(place);
+				
+				/*
+				 * Store place ID from FB
+				 * Store IDs in array
+				 * Check if ID is in array
+				 * Display one marker for each ID.
+				 */
+			}
+			
+			
+		}
+
+	}
+}
+
+
+
 
 // Load the SDK Asynchronously
 (function(d){
@@ -172,9 +246,14 @@ function create_route () {
 				var utc = datepicker_date.getTime() + (datepicker_date.getTimezoneOffset() * 60000); // Return 1356998400000
 				
 				var actual_date = new Date(utc - (3600000*offset_int)); // Now you have actual Date with correct timezone. return "Mon Dec 31 2012 16:00:00 GMT+0000 (GMT Standard Time) "
-				console.log(actual_date);
 				
 				//TODO convert this number to facebook date format. then get photos after that Date.
+				
+				display_route();
+				
+				
+				testAPI(Date.parse(actual_date));
+				
 				
 				$( this ).dialog( "close" ); // Close dialog
 			},
@@ -190,6 +269,8 @@ function create_route () {
 	});
 	
 	calculate_time_zone();
+	
+	gm_place_autocomplete();
 }
 
 
