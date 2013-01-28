@@ -12,3 +12,10 @@
 
 
 Facebook Graph API: "primary way to get data in and out of Facebook's social graph". https://developers.facebook.com/docs/getting-started/graphapi/
+
+
+TODO list:
+Via point: add to map. Search for Google Map Api
+
+Challenge:
+1. FB does not give original photo information. Don't know photo taken time, GPS etc.

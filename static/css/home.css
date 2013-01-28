@@ -38,3 +38,8 @@
     z-index: 1200 !important;
 }
 
+
+
+img.highlighted {
+    border: 2px solid blue;
+}
