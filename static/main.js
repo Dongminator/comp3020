@@ -340,7 +340,7 @@ function load_photos_from_facebook_title () {
 				console.log(Date.parse(actual_date));
 				console.log(Date.parse("2013-01-03T11:07:50+0000"));
 				
-				get_album_ids(Date.parse(actual_date), photo_selection_dialog);
+				get_album_ids(Date.parse(actual_date), album_selection_dialog);
 				
 				$( this ).dialog( "close" ); // Close dialog
 				
@@ -385,13 +385,15 @@ function get_album_ids(parsedDate, callback){
 		console.log(albums_updated_after_parsedDate);
 		$('#loading_dialog').dialog( "close" );
 		
-		callback(albums_updated_after_parsedDate);// photo_selection_dialog
+		callback(albums_updated_after_parsedDate, parsedDate);// album_selection_dialog
 	});
 }
 
 
-function photo_selection_dialog (album_id_array) {
-	$("#facebook_photo_selection_dialog").dialog({ 
+function album_selection_dialog (album_id_array, parsedDate) {
+
+	var selected_album_ids = new Array();
+	$("#facebook_album_selection_dialog").dialog({ 
 		width: 1200,
 		height: 600,
 		draggable: false,
@@ -400,6 +402,7 @@ function photo_selection_dialog (album_id_array) {
 				$( this ).dialog( "close" ); // Close dialog
 				
 				// TODO go to next dialog -> select photo
+				photo_selection_dialog(selected_album_ids, parsedDate);
 			}
 		}
 	});
@@ -426,6 +429,7 @@ function photo_selection_dialog (album_id_array) {
 			});
 		});
 		
+		// Generate HTML
 		if (i%images_each_row === 0) {
 			row = cover_photo_table.insertRow(-1);// Insert a row at last position
 		}
@@ -433,7 +437,6 @@ function photo_selection_dialog (album_id_array) {
 		cell1.innerHTML = "<img src='' data-albumId=\"" + album_id_array[i] + "\">";
 	}
 	
-	var selected_album_ids = new Array();
 	$('#select_album_form img').click(function() {
 		var selected_album_id = $(this).attr('data-albumId');
 		console.log(selected_album_id);
@@ -450,10 +453,138 @@ function photo_selection_dialog (album_id_array) {
 		    // Highlight the newly selected image
 		    $(this).addClass('highlighted');
 		}
-	    console.log(selected_album_ids);
+	    console.log("Selected album ids:" + selected_album_ids);
 	});
 }
 
+
+var curr_album_photos_cout_after_given_date = 0;
+var curr_album_photos_ids_after_given_date = new Array();
+function photo_selection_dialog (albumIds, parsedDate) {
+	$("#facebook_photo_selection_dialog").dialog({ 
+		width: 1200,
+		height: 600,
+		draggable: false,
+		buttons: {
+			Confirm: function(){
+				$( this ).dialog( "close" ); // Close dialog
+				
+				// TODO display route
+			}
+		}
+	});
+	
+	// TODO validate at least one album is chosen.
+	
+	if (albumIds.length === 1) {
+		// TODO Construct HTML of 1 album here.
+		var images_each_row = 4;
+		var photos_table = $('<table></table>').attr('id', 'photos_table'); // Create a table
+
+		var row;
+		
+		var photo_ids = new Array();
+		// Load photos from this album
+		
+		// Get number of photos to be displayed. I.E. store IDs of photos.
+		// After that, append photos.
+		
+		fb_get_photos('/' + albumIds[0] + '?fields=photos', parsedDate);
+		
+		
+		
+		
+	} else {
+		console.log ("More than one albums are chosen:" + albumIds);
+		
+	}
+	
+	
+}
+
+function fb_get_photos (url, parsedDate) {
+	FB.api(url, function(response) {
+		console.log(response);
+		
+		var photos = null;
+		if (response.photos) {
+			photos = response.photos.data;
+		} else {
+			photos = response.data;
+		}
+		var number_of_photos = photos.length;
+		for (var i = 0; i < number_of_photos; i++) {
+			var photo = photos[i];
+			var created_time = photo.created_time;
+			var created_time_millisecond = Date.parse(created_time);
+			if (created_time_millisecond > parsedDate) { // Store ID.
+				curr_album_photos_cout_after_given_date++ ;
+				curr_album_photos_ids_after_given_date.push(photo.id);
+			}
+		}
+		
+		// Go to next page
+		if (response.photos) { // first page of photos. 
+			if(response.photos.paging && response.photos.paging.next) {
+				new_url = response.photos.paging.next.substring(26);// 26: https://graph.facebook.com/
+				console.log(new_url);
+				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+			} else {
+				// No more photos
+				console.log(curr_album_photos_cout_after_given_date);
+				console.log(curr_album_photos_ids_after_given_date);
+				
+//				displayPhotos ();
+			}
+		} else { // not first page -> 2,3,4... pages. Only have one data field. 
+			if (response.paging.next) {
+				new_url = response.paging.next.substring(26);
+				console.log(new_url);
+				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+			} else {
+				console.log(curr_album_photos_cout_after_given_date);
+				console.log(curr_album_photos_ids_after_given_date);
+				// No more photos
+//				displayPhotos ();
+			}
+		}
+		
+	});
+}
+
+//function displayPhotos () {
+//	for (int i = 0; i < number_of_photos; i++) {
+//		if (i%images_each_row === 0) {
+//			row = cover_photo_table.insertRow(-1);// Insert a row at last position
+//		}
+//		var cell1 = row.insertCell(i%images_each_row);
+//		cell1.innerHTML = "<img src='' data-albumId=\"" + album_id_array[i] + "\">";
+//		
+//	}
+//	
+//	
+//	$('#facebook_photo_selection_dialog').append(photos_table); // Append table to the div
+//	
+//	// Add click listener
+//	$('#photos_table img').click(function() {
+//		var selected_photo_id = $(this).attr('data-photoId');
+//		console.log(selected_photo_id);
+//	    // Set the form value
+//		if (selected_photos.indexOf(selected_photo_id) !== -1) {
+//			var index = selected_photos.indexOf(selected_photo_id);
+//			selected_photos.splice(index, 1);
+//
+//		    // Unhighlight all the images
+//		    $(this).removeClass('highlighted');
+//		} else {
+//			selected_photos.push(selected_photo_id);
+//			
+//		    // Highlight the newly selected image
+//		    $(this).addClass('highlighted');
+//		}
+//	    console.log(selected_photos);
+//	});
+//}
 
 function edit_via_points () {
 	$("#facebook_photo_confirm_dialog").dialog({ 

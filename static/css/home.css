@@ -43,3 +43,9 @@
 img.highlighted {
     border: 2px solid blue;
 }
+
+/* Photo selection: white-space: nowrap -> no newline in div; overflow:auto -> scrollbar only in div*/
+.album_photos {
+	white-space: nowrap;
+	overflow:auto;
+}
