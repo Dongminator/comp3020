@@ -458,7 +458,7 @@ function album_selection_dialog (album_id_array, parsedDate) {
 }
 
 
-var curr_album_photos_cout_after_given_date = 0;
+var curr_album_photos_count_after_given_date = 0;
 var curr_album_photos_ids_after_given_date = new Array();
 function photo_selection_dialog (albumIds, parsedDate) {
 	$("#facebook_photo_selection_dialog").dialog({ 
@@ -478,20 +478,8 @@ function photo_selection_dialog (albumIds, parsedDate) {
 	
 	if (albumIds.length === 1) {
 		// TODO Construct HTML of 1 album here.
-		var images_each_row = 4;
-		var photos_table = $('<table></table>').attr('id', 'photos_table'); // Create a table
 
-		var row;
-		
-		var photo_ids = new Array();
-		// Load photos from this album
-		
-		// Get number of photos to be displayed. I.E. store IDs of photos.
-		// After that, append photos.
-		
 		fb_get_photos('/' + albumIds[0] + '?fields=photos', parsedDate);
-		
-		
 		
 		
 	} else {
@@ -518,7 +506,7 @@ function fb_get_photos (url, parsedDate) {
 			var created_time = photo.created_time;
 			var created_time_millisecond = Date.parse(created_time);
 			if (created_time_millisecond > parsedDate) { // Store ID.
-				curr_album_photos_cout_after_given_date++ ;
+				curr_album_photos_count_after_given_date++ ;
 				curr_album_photos_ids_after_given_date.push(photo.id);
 			}
 		}
@@ -531,10 +519,10 @@ function fb_get_photos (url, parsedDate) {
 				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			} else {
 				// No more photos
-				console.log(curr_album_photos_cout_after_given_date);
+				console.log(curr_album_photos_count_after_given_date);
 				console.log(curr_album_photos_ids_after_given_date);
 				
-//				displayPhotos ();
+				displayPhotos ();
 			}
 		} else { // not first page -> 2,3,4... pages. Only have one data field. 
 			if (response.paging.next) {
@@ -542,49 +530,71 @@ function fb_get_photos (url, parsedDate) {
 				console.log(new_url);
 				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			} else {
-				console.log(curr_album_photos_cout_after_given_date);
+				console.log(curr_album_photos_count_after_given_date);
 				console.log(curr_album_photos_ids_after_given_date);
 				// No more photos
-//				displayPhotos ();
+				displayPhotos ();
 			}
 		}
 		
 	});
 }
 
-//function displayPhotos () {
-//	for (int i = 0; i < number_of_photos; i++) {
-//		if (i%images_each_row === 0) {
-//			row = cover_photo_table.insertRow(-1);// Insert a row at last position
-//		}
-//		var cell1 = row.insertCell(i%images_each_row);
-//		cell1.innerHTML = "<img src='' data-albumId=\"" + album_id_array[i] + "\">";
-//		
-//	}
-//	
-//	
-//	$('#facebook_photo_selection_dialog').append(photos_table); // Append table to the div
-//	
-//	// Add click listener
-//	$('#photos_table img').click(function() {
-//		var selected_photo_id = $(this).attr('data-photoId');
-//		console.log(selected_photo_id);
-//	    // Set the form value
-//		if (selected_photos.indexOf(selected_photo_id) !== -1) {
-//			var index = selected_photos.indexOf(selected_photo_id);
-//			selected_photos.splice(index, 1);
-//
-//		    // Unhighlight all the images
-//		    $(this).removeClass('highlighted');
-//		} else {
-//			selected_photos.push(selected_photo_id);
-//			
-//		    // Highlight the newly selected image
-//		    $(this).addClass('highlighted');
-//		}
-//	    console.log(selected_photos);
-//	});
-//}
+var selected_photos = new Array(); // In the select photo dialog, the photos selected by the users. These photos will be shown on route.
+function displayPhotos () {
+	var images_per_row = 5;
+	var photos_table = $('<table></table>').attr('id', 'photos_table'); // Create a table
+
+	$('#facebook_photo_selection_dialog').append(photos_table); // Append table to the div
+	
+	var photos_table2 = document.getElementById("photos_table");
+	var row;
+	// Load photos from this album
+	
+	// Get number of photos to be displayed. I.E. store IDs of photos.
+	// After that, append photos.
+	if (curr_album_photos_count_after_given_date === curr_album_photos_ids_after_given_date.length) {
+		console.log("number equal");
+	} else {
+		console.log("number !equal");
+	}
+	
+	for (var i = 0; i < curr_album_photos_count_after_given_date; i++) {
+		var photo_id = curr_album_photos_ids_after_given_date[i];
+		if (i%images_per_row === 0) {
+			row = photos_table2.insertRow(-1);// Insert a row at last position
+		}
+		var cell = row.insertCell (i%images_per_row);
+		cell.innerHTML = "<img src='' data-photoId=\"" + photo_id + "\">";
+		
+		FB.api('/' + photo_id, function(response) {
+			var fb_picture_url = response.picture;
+			var fb_picture_id = response.id;
+			$('#photos_table').find("[data-photoId='" + fb_picture_id + "']").attr('src', fb_picture_url);
+		});
+		
+	}
+	
+	// Add click listener
+	$('#photos_table img').click(function() {
+		var selected_photo_id = $(this).attr('data-photoId');
+		console.log(selected_photo_id);
+	    // Set the form value
+		if (selected_photos.indexOf(selected_photo_id) !== -1) { // Photo exists in array -> remove.
+			var index = selected_photos.indexOf(selected_photo_id);
+			selected_photos.splice(index, 1);
+
+		    // Unhighlight all the images
+		    $(this).removeClass('highlighted');
+		} else {
+			selected_photos.push(selected_photo_id);
+			
+		    // Highlight the newly selected image
+		    $(this).addClass('highlighted');
+		}
+	    console.log(selected_photos);
+	});
+}
 
 function edit_via_points () {
 	$("#facebook_photo_confirm_dialog").dialog({ 
