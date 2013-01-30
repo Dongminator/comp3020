@@ -136,11 +136,16 @@ function googlemap_set_marker(place) {
 /*
  * Knowing two points and via points (waypoint), generate the route and display on Google map.
  */
-function display_route () {
+function gm_display_route (via_places) {
 	var directionsDisplay;
 	var directionsService = new google.maps.DirectionsService();
 
-	directionsDisplay = new google.maps.DirectionsRenderer();
+	var rendererOptions = {
+			draggable : true,
+			suppressInfoWindows: true,
+            suppressMarkers: true
+	}
+	directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
 
 
 	directionsDisplay.setMap(map);
@@ -152,9 +157,13 @@ function display_route () {
 	
 	var start = start_place_string;
 	var end = end_place_string;
+	
+	var waypoints = gm_convert_waypoints(via_places);
+	
 	var request = {
 			origin:start,
 			destination:end,
+			waypoints: waypoints,
 			travelMode: google.maps.TravelMode.DRIVING
 	};
 	directionsService.route(request, function(result, status) {
@@ -163,11 +172,48 @@ function display_route () {
 		}
 	});
 	
+	var infoWindowContent = "<img src='' data-photoId="">";
+	var infoWindow = new google.maps.InfoWindow({
+		content : infoWindowContent;
+	});
+	
+	var marker = new google.maps.Marker ({
+		
+	});
+	
+	google.maps.event.addListener(marker, 'click', function() {
+		infoWindow.open(map,marker);
+	});
 	// TODO: issue: when create new one, need to remove old routes.
 	
 }
 
 
 
+function gm_convert_waypoints (via_places) {
+	var waypoints = [];
 
+	// TODO 8 => via_places.length
+	for (var i = 0; i < 8; i++) {
+		waypoints.push({
+	          location: via_places[i].location.latitude + ', ' +via_places[i].location.longitude,
+	          stopover:true
+	      });
+	}
+	return waypoints;
+	
+}
+//"place": {
+//"id": "149203025119254", 
+//"name": "Dover Ferry Port", 
+//"location": {
+//	"street": "Glasdon Unit East Camber Eastern Dock, Dover, Kent", 
+//	"city": "Dover", 
+//	"state": "", 
+//	"country": "United Kingdom", 
+//	"zip": "CT16 1JA", 
+//	"latitude": 51.126521704244, 
+//	"longitude": 1.3329200119598
+//}
+//}
 
