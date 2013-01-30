@@ -136,14 +136,29 @@ function googlemap_set_marker(place) {
 /*
  * Knowing two points and via points (waypoint), generate the route and display on Google map.
  */
-function gm_display_route (via_places) {
+
+var infoWindow;
+var markerArray = [];
+function gm_display_route (id_place_pairs) {
+	// via_places: places of photos with geographical information
+	// via_places: key -> value pairs: photo ID, places of photos with geographical information
+	var via_photos_ids = new Array();
+	var via_places = new Array();
+	for (var key in id_place_pairs) {
+		via_photos_ids.push(key);
+		via_places.push(id_place_pairs[key]);
+	}
+	console.log(via_places.length);
+	
 	var directionsDisplay;
 	var directionsService = new google.maps.DirectionsService();
 
+	// Custom InfoWindow and Marker
+	
+	infoWindow = new google.maps.InfoWindow();
 	var rendererOptions = {
 			draggable : true,
-			suppressInfoWindows: true,
-            suppressMarkers: true
+			suppressMarkers : true
 	}
 	directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
 
@@ -169,26 +184,51 @@ function gm_display_route (via_places) {
 	directionsService.route(request, function(result, status) {
 		if (status == google.maps.DirectionsStatus.OK) {
 			directionsDisplay.setDirections(result);
+			
+			var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
+			
+			var numberOfWaypoints = result.routes[0].legs.length - 1;
+			console.log("Number of waypoints:" + numberOfWaypoints);
+			for (var i = 0; i < numberOfWaypoints; i++) {
+				var leg = result.routes[0].legs[i];
+				
+				
+				var marker = new google.maps.Marker({
+					position: leg.end_location,
+					map: map
+				});
+				
+				// TODO get photos
+//				putPhotoOnInfoWindow();
+
+//				attachInstructionText(marker, myRoute.steps[i].instructions);
+				
+				var imageTag = getImageTag(via_photos_ids[i], attachInstructionText, marker);// pass function as callback
+				
+//				attachInstructionText(marker, imageTag);
+				markerArray[i] = marker;
+			}
+
 		}
 	});
 	
-	var infoWindowContent = "<img src='' data-photoId="">";
-	var infoWindow = new google.maps.InfoWindow({
-		content : infoWindowContent;
-	});
-	
-	var marker = new google.maps.Marker ({
-		
-	});
-	
-	google.maps.event.addListener(marker, 'click', function() {
-		infoWindow.open(map,marker);
-	});
+//	var marker = new google.maps.Marker ({
+//		
+//	});
+//	
+//	google.maps.event.addListener(marker, 'click', function() {
+//		infoWindow.open(map,marker);
+//	});
 	// TODO: issue: when create new one, need to remove old routes.
 	
 }
 
-
+function attachInstructionText(marker, text) {
+	  google.maps.event.addListener(marker, 'click', function() {
+		  infoWindow.setContent(text);
+		  infoWindow.open(map, marker);
+	  });
+	}
 
 function gm_convert_waypoints (via_places) {
 	var waypoints = [];

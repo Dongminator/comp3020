@@ -622,9 +622,11 @@ function check_photo_location() {
 	console.log(selected_photos);
 	console.log(photo_location_table);
 	var via_places = new Array();
+	var via_places2 = new Array();
 	for (var i = 0; i < selected_photos.length; i++) {
 		if ( photo_location_table[selected_photos[i]] ) {
-			via_places.push(photo_location_table[selected_photos[i]]);
+			via_places[selected_photos[i]] = photo_location_table[selected_photos[i]];
+			via_places2.push(photo_location_table[selected_photos[i]]);
 		}
 	}
 
@@ -632,6 +634,24 @@ function check_photo_location() {
 	console.log(via_places);
 	
 	gm_display_route(via_places);
+//	for (var key in via_places) {
+//		console.log(key + " " + via_places[key]);
+//	}
+	
+
+	console.log(via_places2.length);
+	
+}
+
+function getImageTag(pId, callback, marker) {
+	FB.api('/' + pId, function(response) {
+		
+		var image_url = response.source;
+		
+		var imageTag = "<img src='" + image_url + "' data-photoId='" + pId + "'>";
+		
+		callback (marker, imageTag);
+	});
 }
 
 function edit_via_points () {
