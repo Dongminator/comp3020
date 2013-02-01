@@ -150,76 +150,95 @@ function gm_display_route (id_place_pairs) {
 	}
 	console.log(via_places.length);
 	
-	var directionsDisplay;
-	var directionsService = new google.maps.DirectionsService();
-
-	// Custom InfoWindow and Marker
+	var waypoints = gm_convert_waypoints(via_places); // 40 points -> 41 routes
 	
 	infoWindow = new google.maps.InfoWindow();
-	var rendererOptions = {
-			draggable : true,
-			suppressMarkers : true
-	}
-	directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
-
-
-	directionsDisplay.setMap(map);
+	var i = 0;
 	
-	var start_place_string = start_place.formatted_address;
-	var end_place_string = end_place.formatted_address;
-	start_place_string = start_place_string.replace(/\s+/g, '');// Remove all spaces
-	end_place_string = end_place_string.replace(/\s+/g, '');// Remove all spaces
-	
-	var start = start_place_string;
-	var end = end_place_string;
-	
-	var waypoints = gm_convert_waypoints(via_places);
-	
-	var request = {
-			origin:start,
-			destination:end,
-			waypoints: waypoints,
-			travelMode: google.maps.TravelMode.DRIVING
-	};
-	directionsService.route(request, function(result, status) {
-		if (status == google.maps.DirectionsStatus.OK) {
-			directionsDisplay.setDirections(result);
-			
-			var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
-			
-			var numberOfWaypoints = result.routes[0].legs.length - 1;
-			console.log("Number of waypoints:" + numberOfWaypoints);
-			for (var i = 0; i < numberOfWaypoints; i++) {
-				var leg = result.routes[0].legs[i];
-				
-				
-				var marker = new google.maps.Marker({
-					position: leg.end_location,
-					map: map
-				});
-				
-				// TODO get photos
-//				putPhotoOnInfoWindow();
-
-//				attachInstructionText(marker, myRoute.steps[i].instructions);
-				
-				var imageTag = getImageTag(via_photos_ids[i], attachInstructionText, marker);// pass function as callback
-				
-//				attachInstructionText(marker, imageTag);
-				markerArray[i] = marker;
-			}
-
-		}
-	});
-	
-//	var marker = new google.maps.Marker ({
+	temp2(i, waypoints);
+//	for (var i = 0; i < waypoints.length + 1; i++) {
 //		
-//	});
-//	
-//	google.maps.event.addListener(marker, 'click', function() {
-//		infoWindow.open(map,marker);
-//	});
+//		
+//	}
 	// TODO: issue: when create new one, need to remove old routes.
+}
+
+function temp2 (i, waypoints) {
+	if (i < waypoints.length + 1) {
+//		console.log("l: " + waypoints.length + 1);
+		var tempfunction = temp (i, waypoints);
+		setTimeout(tempfunction, 1000);
+		console.log("i:" + i);
+	}
+}
+function temp (i, waypoints) {
+	return function () {
+		var start_place_string;
+		var end_place_string;
+		
+		if (i === 0) { // start route
+			start_place_string = start_place.formatted_address;
+			start_place_string = start_place_string.replace(/\s+/g, '');// Remove all spaces
+			
+			end_place_string = waypoints[0];
+		} else if (i === waypoints.length) { // last route
+			start_place_string = waypoints[waypoints.length - 1];
+			
+			end_place_string = end_place.formatted_address;
+			end_place_string = end_place_string.replace(/\s+/g, '');// Remove all spaces
+		} else {
+			start_place_string = waypoints[i - 1];
+			end_place_string = waypoints[i];
+		}
+		
+		
+		var directionsDisplay;
+		var directionsService = new google.maps.DirectionsService();
+
+		var rendererOptions = {
+				draggable : true,
+				suppressMarkers : true
+		}
+		directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+
+		directionsDisplay.setMap(map);
+		
+		var request = {
+				origin:start_place_string,
+				destination:end_place_string,
+				travelMode: google.maps.TravelMode.DRIVING
+		};
+		console.log(start_place_string + " " + end_place_string);
+		
+		
+		directionsService.route(request, function(result, status) {
+			console.log(status);
+			if (status == google.maps.DirectionsStatus.OK) {
+				directionsDisplay.setDirections(result);
+				console.log(result);
+				i++;
+				temp2(i, waypoints);
+//				var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
+//				var numberOfWaypoints = result.routes[0].legs.length - 1;
+//				console.log("Number of waypoints:" + numberOfWaypoints);
+//				for (var i = 0; i < numberOfWaypoints; i++) {
+//					var leg = result.routes[0].legs[i];
+//					var marker = new google.maps.Marker({
+//						position: leg.end_location,
+//						map: map
+//					});
+//					// TODO get photos
+////					attachInstructionText(marker, myRoute.steps[i].instructions);
+//					var imageTag = getImageTag(via_photos_ids[i], attachInstructionText, marker);// pass function as callback
+////					attachInstructionText(marker, imageTag);
+//					markerArray[i] = marker;
+//				}
+			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
+				i++;
+				temp2(i, waypoints);
+			}
+		});
+	}
 	
 }
 
@@ -233,15 +252,11 @@ function attachInstructionText(marker, text) {
 function gm_convert_waypoints (via_places) {
 	var waypoints = [];
 
-	// TODO 8 => via_places.length
-	for (var i = 0; i < 8; i++) {
-		waypoints.push({
-	          location: via_places[i].location.latitude + ', ' +via_places[i].location.longitude,
-	          stopover:true
-	      });
+	// via_places.length => 8 if has only one route. Maximum of waypoints in one route is 8.
+	for (var i = 0; i < via_places.length; i++) {
+		waypoints.push(via_places[i].location.latitude + ', ' +via_places[i].location.longitude);
 	}
 	return waypoints;
-	
 }
 //"place": {
 //"id": "149203025119254", 

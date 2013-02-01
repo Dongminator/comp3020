@@ -382,7 +382,7 @@ function get_album_ids(parsedDate, callback){
 			}
 		}
 
-		console.log(albums_updated_after_parsedDate);
+//		console.log(albums_updated_after_parsedDate);
 		$('#loading_dialog').dialog( "close" );
 		
 		callback(albums_updated_after_parsedDate, parsedDate);// album_selection_dialog
@@ -489,7 +489,7 @@ function photo_selection_dialog (albumIds, parsedDate) {
 
 function fb_get_photos (url, parsedDate) {
 	FB.api(url, function(response) {
-		console.log(response);
+//		console.log(response);
 		
 		var photos = null;
 		if (response.photos) {
@@ -512,7 +512,7 @@ function fb_get_photos (url, parsedDate) {
 		if (response.photos) { // first page of photos. 
 			if(response.photos.paging && response.photos.paging.next) {
 				new_url = response.photos.paging.next.substring(26);// 26: https://graph.facebook.com/
-				console.log(new_url);
+//				console.log(new_url);
 				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			} else {
 				// No more photos
