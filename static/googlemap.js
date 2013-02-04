@@ -155,7 +155,7 @@ function gm_display_route (id_place_pairs) {
 	infoWindow = new google.maps.InfoWindow();
 	var i = 0;
 	
-	temp2(i, waypoints);
+	temp2(i, waypoints, 0);
 //	for (var i = 0; i < waypoints.length + 1; i++) {
 //		
 //		
@@ -163,11 +163,11 @@ function gm_display_route (id_place_pairs) {
 	// TODO: issue: when create new one, need to remove old routes.
 }
 
-function temp2 (i, waypoints) {
+function temp2 (i, waypoints, pause_time) {
 	if (i < waypoints.length + 1) {
 //		console.log("l: " + waypoints.length + 1);
 		var tempfunction = temp (i, waypoints);
-		setTimeout(tempfunction, 1000);
+		setTimeout(tempfunction, pause_time);
 		console.log("i:" + i);
 	}
 }
@@ -236,6 +236,8 @@ function temp (i, waypoints) {
 			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
 				i++;
 				temp2(i, waypoints);
+			} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
+				temp2(i, waypoints, 500);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 			}
 		});
 	}

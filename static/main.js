@@ -338,7 +338,6 @@ function load_photos_from_facebook_title () {
 				
 				// Now need to load fb albums.
 				console.log(Date.parse(actual_date));
-				console.log(Date.parse("2013-01-03T11:07:50+0000"));
 				
 				get_album_ids(Date.parse(actual_date), album_selection_dialog);
 				
@@ -391,7 +390,6 @@ function get_album_ids(parsedDate, callback){
 
 
 function album_selection_dialog (album_id_array, parsedDate) {
-
 	var selected_album_ids = new Array();
 	$("#facebook_album_selection_dialog").dialog({ 
 		width: 1200,
@@ -466,10 +464,13 @@ function photo_selection_dialog (albumIds, parsedDate) {
 		height: 600,
 		draggable: false,
 		buttons: {
-			Confirm: function(){
+			Next: function(){
 				$( this ).dialog( "close" ); // Close dialog
 				
 				check_photo_location();
+				
+				// TODO next to load status and check-in
+				sc_select_dialog(parsedDate);
 			}
 		}
 	});
@@ -483,8 +484,51 @@ function photo_selection_dialog (albumIds, parsedDate) {
 		console.log ("More than one albums are chosen:" + albumIds);
 		
 	}
+}
+
+function sc_select_dialog (parsedDate) {
+	$("#fb_sc_select_dialog").dialog({ 
+		width: 1200,
+		height: 600,
+		draggable: false,
+		buttons: {
+			Next: function(){
+				$( this ).dialog( "close" ); // Close dialog
+				
+				// TODO next to load status and check-in
+			}
+		}
+	});
 	
 	
+	// Get status & check-ins
+	
+	fb_get_status('/me?fields=statuses', parsedDate = 1352160000000);// parsedDate = 1352160000000 
+//	fb_get_checkin('/me?fields=checkins', parsedDate);
+	
+	
+	// Construct html
+	
+	var selected_sc = new Array();
+	$('#sc_list_ul li').click(function() {
+	    $(this).addClass('highlighted');
+	    
+	    var selected_sc_id = $(this).attr('data-scId');
+		console.log(selected_sc_id);
+	    // Set the form value
+		if (selected_sc.indexOf(selected_sc_id) !== -1) { // SC exists in array -> remove.
+			var index = selected_sc.indexOf(selected_sc_id);
+			selected_sc.splice(index, 1);
+
+		    // Unhighlight all the images
+		    $(this).removeClass('highlighted');
+		} else {
+			selected_sc.push(selected_sc_id);
+			
+		    // Highlight the newly selected image
+		    $(this).addClass('highlighted');
+		}
+	});
 }
 
 function fb_get_photos (url, parsedDate) {
@@ -536,6 +580,119 @@ function fb_get_photos (url, parsedDate) {
 		
 	});
 }
+
+var curr_status_count_after_given_date = 0;
+var curr_status_ids_after_given_date = new Array();
+function fb_get_status (url, parsedDate) { // me?fields=statuses
+	console.log("url:" + url);
+	console.log(parsedDate);
+	FB.api(url, function(response) {
+		console.log(response);
+		
+		var statuses = null;
+		if (response.data) {
+			statuses = response.data;
+		} else {
+			statuses = response.statuses.data;
+		}
+		// TODO else no status at all
+		var process_next_page = true;
+		for (var i = 0; i < statuses.length; i++) {
+			var status = statuses[i];
+			var created_time = status.updated_time;
+			var created_time_millisecond = Date.parse(created_time);
+			if (created_time_millisecond > parsedDate) { // Store ID.
+				console.log(created_time_millisecond);
+				curr_status_count_after_given_date++ ;
+				curr_status_ids_after_given_date.push(status.id);
+				
+			} else {
+				// If status is created before the given date, then the rest of the statuses will all be before the given date. thus no need to continue.
+				process_next_page = false;
+				break;
+			}
+		}
+
+		console.log(process_next_page);
+		// Go to next page
+		if (process_next_page && response.statuses) { // first page of photos. 
+			if(response.statuses.paging && response.statuses.paging.next) {
+				new_url = response.statuses.paging.next.substring(26);// 26: https://graph.facebook.com/
+				console.log(new_url);
+				fb_get_status(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+			} else {
+				// No more photos
+				// do something with status
+			}
+		} else if (process_next_page && response.data) { // not first page -> 2,3,4... pages. Only have one data field. 
+			console.log("number of data:" + response.data.length);
+			if (response.data.length !== 0 && response.paging.next) {
+				new_url = response.paging.next.substring(26);
+				console.log(new_url);
+				fb_get_status(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+			} else {
+				console.log(curr_album_photos_count_after_given_date);
+				console.log(curr_album_photos_ids_after_given_date);
+				// No more photos
+				// do something with status
+			}
+		}
+		
+		
+	});
+}
+
+function fb_get_checkin (url, parsedDate) {
+	FB.api(url, function(response) {
+////		console.log(response);
+//		
+//		var photos = null;
+//		if (response.photos) {
+//			photos = response.photos.data;
+//		} else {
+//			photos = response.data;
+//		}
+//		var number_of_photos = photos.length;
+//		for (var i = 0; i < number_of_photos; i++) {
+//			var photo = photos[i];
+//			var created_time = photo.created_time;
+//			var created_time_millisecond = Date.parse(created_time);
+//			if (created_time_millisecond > parsedDate) { // Store ID.
+//				curr_album_photos_count_after_given_date++ ;
+//				curr_album_photos_ids_after_given_date.push(photo.id);
+//			}
+//		}
+//		
+//		// Go to next page
+//		if (response.photos) { // first page of photos. 
+//			if(response.photos.paging && response.photos.paging.next) {
+//				new_url = response.photos.paging.next.substring(26);// 26: https://graph.facebook.com/
+////				console.log(new_url);
+//				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+//			} else {
+//				// No more photos
+//				console.log(curr_album_photos_count_after_given_date);
+//				console.log(curr_album_photos_ids_after_given_date);
+//				
+//				displayPhotos ();
+//			}
+//		} else { // not first page -> 2,3,4... pages. Only have one data field. 
+//			if (response.paging.next) {
+//				new_url = response.paging.next.substring(26);
+//				console.log(new_url);
+//				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+//			} else {
+//				console.log(curr_album_photos_count_after_given_date);
+//				console.log(curr_album_photos_ids_after_given_date);
+//				// No more photos
+//				displayPhotos ();
+//			}
+//		}
+		
+	});
+}
+
+
 
 var selected_photos = new Array(); // In the select photo dialog, the photos selected by the users. These photos will be shown on route.
 var photo_location_table = {};
@@ -665,7 +822,6 @@ function edit_via_points () {
 				
 				
 				$( this ).dialog( "close" ); // Close dialog
-				
 				
 			}
 		}

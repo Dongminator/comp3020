@@ -40,7 +40,7 @@ function login() {
 		} else {
 			// cancelled
 		}
-	}, {scope: 'email, user_photos, friends_photos'});
+	}, {scope: 'user_status, email, user_photos, friends_photos, read_mailbox'});
 //	add permission
 }
 

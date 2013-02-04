@@ -49,3 +49,26 @@ img.highlighted {
 	white-space: nowrap;
 	overflow:auto;
 }
+
+
+
+/* Remove number in ordered list*/
+#sc_list_ul {
+	diaplay : table;
+	border-collapse:collapse;
+}
+#sc_list_ul li {
+    display: table-row;
+}
+
+#sc_list_ul img { 
+    display: table-cell;
+}
+#sc_list_ul p { 
+    display: table-cell;
+    padding-left: 20px; 
+    vertical-align: middle;
+}
+#sc_list_ul li.highlighted {
+    border: 2px solid blue;
+}
