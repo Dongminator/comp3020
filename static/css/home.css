@@ -1,16 +1,23 @@
-#feed {
-	position: absolute;
-	top: 0;
-	right: 0;
-	width: 50%;
-}
-
 #map {
 	position: absolute;
 	top: 0;
 	left: 0;
 	width: 50%;
 	height : 100%;
+}
+
+#feed {
+	position: absolute;
+	top: 0;
+	right : 25%;
+	width: 25%;
+}
+
+#friend_div {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 25%;
 }
 
 .dialog {

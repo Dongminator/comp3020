@@ -40,8 +40,11 @@ function login() {
 		} else {
 			// cancelled
 		}
-	}, {scope: 'user_status, email, user_photos, friends_photos, read_mailbox'});
+	}, {scope: 'user_status, email, user_photos, friends_photos, read_mailbox, read_friendlists'});
 //	add permission
+	/*
+	 * read_friendlists : read friend list.
+	 */
 }
 
 function testAPI() {

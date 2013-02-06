@@ -20,13 +20,14 @@ window.fbAsyncInit = function() {
 	FB.getLoginStatus(function(response) {
 		if (response.status === 'connected') {
 			// connected
-			document.getElementById('fb-logout').style.display = 'block';
+//			document.getElementById('fb-logout').style.display = 'block';
 			access_token = response.authResponse.accessToken
 		} else {
 			// Redirect to login.html
 			window.location = "/login";
-			document.getElementById('fb-logout').style.display = 'block';
+//			document.getElementById('fb-logout').style.display = 'block';
 		}
+		loadFriendList('/me/friends?fields=installed');// in friend.js
 	});
 
 	FB.Event.subscribe('auth.logout', function(response) {
@@ -494,7 +495,7 @@ function sc_select_dialog (parsedDate) {
 		buttons: {
 			Next: function(){
 				$( this ).dialog( "close" ); // Close dialog
-
+				console.log(selected_statusCheckin);
 				// TODO next to load status and check-in
 			}
 		}
@@ -502,7 +503,7 @@ function sc_select_dialog (parsedDate) {
 
 	var unordered_list = $('<ul></ul>').attr('id', 'sc_list_ul'); // Create a ul tag
 	$('#fb_sc_select_dialog').append(unordered_list); // Append ul to the dialog div
-	$("#sc_list_ul").before("<a href=\"javascript:void(0)\" onClick=\"selectAllPhotos('facebook_photo_selection_dialog')\">Select All</a> ");// TODO selectAllStatusAndCheckIn
+	$("#sc_list_ul").before("<a href=\"javascript:void(0)\" onClick=\"selectAllStatusCheckin('fb_sc_select_dialog')\">Select All</a> ");// TODO selectAllStatusAndCheckIn
 
 	// Get status & check-ins
 	fb_get_status('/me?fields=statuses', parsedDate = 1352160000000);// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
@@ -786,6 +787,7 @@ function getImageTag(pId, callback, marker) {
 
 
 // TODO code in this function need to be optimised.
+var selected_statusCheckin = new Array();
 var id_time = new Array();
 function displayStatusCheckin (count, ids, service) {
 	if (count === ids.length) {
@@ -926,7 +928,19 @@ function displayStatusCheckin (count, ids, service) {
 	var selected_sc = new Array();
 }
 
+function selectAllStatusCheckin (div_name) {
+//	console.log(div_name);
+	$('#' + div_name + ' li').addClass('highlighted');
 
+//	console.log(selected_photos.length);
+	selected_statusCheckin.splice(0, selected_statusCheckin.length);
+//	console.log(selected_photos.length);
+	$('#' + div_name + ' li').each ( function () {
+		selected_statusCheckin.push( $(this).data("scid").toString() ); // Note: store string.
+	});
+//	console.log(selected_photos.length);
+//	console.log(selected_photos);
+}
 
 
 function edit_via_points () {

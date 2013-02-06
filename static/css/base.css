@@ -26,6 +26,9 @@ body{
 	display: inline;
 }
 
+#navigation a {
+	display:inline ;
+}
 /* Set Paragraph in navigation to inline. Otherwise, newline will be added after each p tag*/
 p.navigation{
 	display: inline;	
