@@ -40,7 +40,7 @@ function populateFriendList () {
 			li.append("<p>" + friend_ids[i] + "</p>");
 			
 			$('#friend_list li').click(function() {
-				displayFriendRoute( $(this).data("friendid") );
+				displayFriendRoute( $(this).data("friendid"), "Facebook" );
 				$(this).addClass('highlighted');
 			});
 			
@@ -60,6 +60,6 @@ function getFriendProfilePhoto (friendId) {
 	});
 }
 
-function displayFriendRoute (friendId) {
-	console.log(friendId);
+function displayFriendRoute (sNId, sNName) {
+	gm_displayAllRoute(sNId, sNName);
 }

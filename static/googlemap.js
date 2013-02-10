@@ -186,7 +186,7 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 	infoWindow = new google.maps.InfoWindow();
 	var i = 0;
 	
-	temp2(i, waypoints, 0);
+	temp2(i, waypoints, 0, start_place, end_place);
 //	for (var i = 0; i < waypoints.length + 1; i++) {
 //		
 //		
@@ -317,34 +317,42 @@ function modifyJson () {
 	});
 }
 
-function temp2 (i, waypoints, pause_time) {
-	if (i < waypoints.length + 1) {
-//		console.log("l: " + waypoints.length + 1);
-		var tempfunction = temp (i, waypoints);
+function temp2 (i, waypoints, pause_time, rStart, rEnd) {
+	var wpNumber = 0;
+	if (rStart || rEnd) {
+		wpNumber = waypoints.length + 1;
+	} else {
+		wpNumber = waypoints.length - 1;
+	}
+	
+	if (i < wpNumber) {
+		var tempfunction = temp (i, waypoints, rStart, rEnd);
 		setTimeout(tempfunction, pause_time);
-//		console.log("i:" + i);
 	}
 }
-function temp (i, waypoints) {
+function temp (i, waypoints, rStart, rEnd) {
 	return function () {
 		var start_place_string;
 		var end_place_string;
 		
-		if (i === 0) { // start route
-			start_place_string = start_place.formatted_address;
-			start_place_string = start_place_string.replace(/\s+/g, '');// Remove all spaces
-			
-			end_place_string = waypoints[0];
-		} else if (i === waypoints.length) { // last route
-			start_place_string = waypoints[waypoints.length - 1];
-			
-			end_place_string = end_place.formatted_address;
-			end_place_string = end_place_string.replace(/\s+/g, '');// Remove all spaces
+		if (rStart || rEnd) {
+			if (i === 0) { // start route
+				start_place_string = start_place.formatted_address;
+				start_place_string = start_place_string.replace(/\s+/g, '');// Remove all spaces
+				end_place_string = waypoints[0];
+			} else if (i === waypoints.length) { // last route
+				start_place_string = waypoints[waypoints.length - 1];
+				
+				end_place_string = end_place.formatted_address;
+				end_place_string = end_place_string.replace(/\s+/g, '');// Remove all spaces
+			} else {
+				start_place_string = waypoints[i - 1];
+				end_place_string = waypoints[i];
+			}
 		} else {
-			start_place_string = waypoints[i - 1];
-			end_place_string = waypoints[i];
+			start_place_string = waypoints[i];
+			end_place_string = waypoints[i + 1];
 		}
-		
 		
 		var directionsDisplay;
 		var directionsService = new google.maps.DirectionsService();
@@ -371,7 +379,7 @@ function temp (i, waypoints) {
 				directionsDisplay.setDirections(result);
 //				console.log(result);
 				i++;
-				temp2(i, waypoints);
+				temp2(i, waypoints, 0, rStart, rEnd);
 //				var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
 //				var numberOfWaypoints = result.routes[0].legs.length - 1;
 //				console.log("Number of waypoints:" + numberOfWaypoints);
@@ -389,9 +397,9 @@ function temp (i, waypoints) {
 //				}
 			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
 				i++;
-				temp2(i, waypoints);
+				temp2(i, waypoints, 0, rStart, rEnd);
 			} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-				temp2(i, waypoints, 500);// TODO 500 can be optimized. if too small, useful query will run only every second. 
+				temp2(i, waypoints, 500, rStart, rEnd);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 			}
 		});
 	}
@@ -400,23 +408,55 @@ function temp (i, waypoints) {
 
 
 function gm_displayAllRoute (sNId, sNName) {
+	console.log(sNId);
+	console.log(sNName);
+	
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
 		console.log('=============data===========');
 		console.log(data);
 		
-		var result = JSON.parse(data);
-		route['id'] = result.length;
+		var routes = JSON.parse(data);
 		
-		// This is adding route.
-		result.push(route);
+		var numberOfRoutes = routes.length;
 		
-//		console.log(JSON.stringify(result));
-		$.post('/store', { postOption : "route", sNId: sNId, sNName : sNName, start_place : "start address", end_place : "end address", via_photos_ids : JSON.stringify(result) } , function(data) {
-			console.log('=============data===========');
-			console.log(data);
-		});
-
+		if (numberOfRoutes === 0) {
+			console.log("No route.");
+		} else {
+			for (var i = 0; i < numberOfRoutes; i++) {
+				var route = routes[i];
+				var rTitle = route.titlel
+				var rId = route.id;
+				var rWaypoints = route.waypoints;
+				// TODO start place, end place
+				var rStart = '';
+				var rEnd = '';
+				
+				var via_places = new Array();
+				for (var j = 0; j < rWaypoints.length; j++) {
+					var wp = rWaypoints[j];
+					via_places[wp.id] = wp.place;
+				}
+				
+				gm_displayRoute (via_places, rStart, rEnd)
+			}
+		}
 	});
+}
+
+function gm_displayRoute (id_place_pairs, rStart, rEnd) {
+	var via_photos_ids = new Array();
+	var via_places = new Array();
+	for (var key in id_place_pairs) {
+		via_photos_ids.push(key);
+		via_places.push(id_place_pairs[key]);
+	}
+	
+	var waypoints = gm_convert_waypoints(via_places); // 40 points -> 41 routes
+	
+	infoWindow = new google.maps.InfoWindow();
+	var i = 0;
+	
+	temp2(i, waypoints, 0, rStart, rEnd);
 }
 
 function attachInstructionText(marker, text) {
