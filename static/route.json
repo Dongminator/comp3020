@@ -1,0 +1,46 @@
+SOLUTION 1:
+{
+    "route": [
+        {
+            "title": "abc",
+            "waypoints": [
+                {
+                    "api": "facebook",
+                    "type": "photo",
+                    "id": "100",
+                    "place": "via 1"
+                },
+                {
+                    "api": "facebook",
+                    "type": "photo",
+                    "id": "101",
+                    "place": "via 2"
+                }
+            ]
+        },
+        {
+        }
+    ]
+}
+
+SOLUTION 2: 
+[
+    {
+        "title": "abc",
+        "waypoints": [
+            {
+                "api": "facebook",
+                "type": "photo",
+                "id": "100",
+                "place": "via 1"
+            },
+            {
+                "api": "facebook",
+                "type": "photo",
+                "id": "101",
+                "place": "via 2"
+            }
+        ]
+    },
+    {}
+]

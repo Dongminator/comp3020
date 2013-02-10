@@ -46,11 +46,6 @@
 }
 
 
-
-img.highlighted {
-    border: 2px solid blue;
-}
-
 /* Photo selection: white-space: nowrap -> no newline in div; overflow:auto -> scrollbar only in div*/
 .album_photos {
 	white-space: nowrap;
@@ -60,22 +55,23 @@ img.highlighted {
 
 
 /* Remove number in ordered list*/
-#sc_list_ul {
+.ipList {
 	diaplay : table;
 	border-collapse:collapse;
 }
-#sc_list_ul li {
+.ipList li {
     display: table-row;
 }
 
-#sc_list_ul img { 
+.ipList img { 
     display: table-cell;
 }
-#sc_list_ul p { 
+.ipList p { 
     display: table-cell;
     padding-left: 20px; 
     vertical-align: middle;
 }
-#sc_list_ul li.highlighted {
+
+.highlighted {
     border: 2px solid blue;
 }

@@ -48,7 +48,7 @@ function gm_place_autocomplete () {
 
 function gm_addAutoComplete (viaPointNumber) {
 	var via = document.getElementById('via' + viaPointNumber + "_input");
-	console.log(via);
+//	console.log(via);
 	viaPoint_autocomplete = new google.maps.places.Autocomplete(via);
 	
 	addAutocompleteListener(viaPoint_autocomplete, 2);
@@ -139,7 +139,7 @@ function googlemap_set_marker(place) {
 
 var infoWindow;
 var markerArray = [];
-function gm_display_route (id_place_pairs) {
+function gm_display_route (id_place_pairs, sNId, sNName) {
 	// via_places: places of photos with geographical information
 	// via_places: key -> value pairs: photo ID, places of photos with geographical information
 	var via_photos_ids = new Array();
@@ -148,7 +148,38 @@ function gm_display_route (id_place_pairs) {
 		via_photos_ids.push(key);
 		via_places.push(id_place_pairs[key]);
 	}
-	console.log(via_places.length);
+	
+	var route = {};
+	route['title'] = "abc";
+	route['waypoints'] = [];
+	
+	for (var i=0; i < via_photos_ids.length; i++) {
+		route['waypoints'].push({});
+		route['waypoints'][i]['api'] = sNName;
+		route['waypoints'][i]['type'] = "photo";
+		route['waypoints'][i]['id'] = via_photos_ids[i];
+		route['waypoints'][i]['place'] = via_places[i];
+	}
+	
+	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
+		console.log('=============data===========');
+		console.log(data);
+		
+		var result = JSON.parse(data);
+		route['id'] = result.length;
+		
+		// This is adding route.
+		result.push(route);
+		
+//		console.log(JSON.stringify(result));
+		$.post('/store', { postOption : "route", sNId: sNId, sNName : sNName, start_place : "start address", end_place : "end address", via_photos_ids : JSON.stringify(result) } , function(data) {
+			console.log('=============data===========');
+			console.log(data);
+		});
+
+	});
+	
+//	console.log(via_places.length);
 	
 	var waypoints = gm_convert_waypoints(via_places); // 40 points -> 41 routes
 	
@@ -163,12 +194,135 @@ function gm_display_route (id_place_pairs) {
 	// TODO: issue: when create new one, need to remove old routes.
 }
 
+function test_storeData () {
+	var send1 = new Array();
+	send1.push("100");
+	send1.push("101");
+	
+	var send2 = new Array();
+	send2.push("via 1");
+	send2.push("via 2");
+	
+//	var myObject = {};//1
+//	myObject.route = [];//1
+//	myObject.route.push({});//number of routes
+//	// for each route:
+//	myObject.route[0]['title'] = "abc";
+//
+//	myObject.route[0]['waypoints'] = [];
+//	for (var i=0; i < send1.length; i++) {
+//		myObject.route[0]['waypoints'].push({});
+//		
+//		myObject.route[0]['waypoints'][i]['api'] = "facebook";
+//		myObject.route[0]['waypoints'][i]['type'] = "photo";
+//		myObject.route[0]['waypoints'][i]['id'] = send1[i];
+//		myObject.route[0]['waypoints'][i]['place'] = send2[i];
+//	}
+	
+	var myObject = [];
+	myObject.push({});//number of routes
+	myObject[0]['title'] = "abc";
+	myObject[0]['waypoints'] = [];
+	for (var i=0; i < send1.length; i++) {
+		myObject[0]['waypoints'].push({});
+		
+		myObject[0]['waypoints'][i]['api'] = "facebook";
+		myObject[0]['waypoints'][i]['type'] = "photo";
+		myObject[0]['waypoints'][i]['id'] = send1[i];
+		myObject[0]['waypoints'][i]['place'] = send2[i];
+	}
+	
+	var send3 = new Array();
+	send3.push("200");
+	send3.push("201");
+	var send4 = new Array();
+	send4.push("via 3");
+	send4.push("via 4");
+	
+	// route2
+	var route2 = {};
+	route2['title'] = "abc";
+	route2['waypoints'] = [];
+	
+	for (var i=0; i < send3.length; i++) {
+		route2['waypoints'].push({});
+		route2['waypoints'][i]['api'] = "twitter";
+		route2['waypoints'][i]['type'] = "photo";
+		route2['waypoints'][i]['id'] = send3[i];
+		route2['waypoints'][i]['place'] = send4[i];
+	}
+	
+	// push to route JSON
+	myObject.push(route2);
+	
+	console.log(JSON.stringify(myObject));
+	
+	
+
+	
+	$.post('/route', { sNId: "1179454137", sNName : "Facebook" } , function(data) {
+		console.log('=============data===========');
+		console.log(data);
+		
+		var result = JSON.parse(data);
+		console.log(result.length);
+		route2['id'] = result.length;
+		// This is adding route.
+		result.push(route2);
+		
+		$.post('/store', { postOption : "route", sNId: "1179454137", sNName : "Facebook", start_place : "start address", end_place : "end address", via_photos_ids : JSON.stringify(result) } , function(data) {
+			console.log('=============data===========');
+			console.log(data);
+
+			// decode json
+//			var result = JSON.parse(data);
+
+//			var route1 = result[0];
+//			var title = route1.title;
+
+//			console.log(title);
+
+//			var route1waypoints = route1.waypoints;
+
+//			for (var i = 0; i<route1waypoints.length; i++) {
+//			console.log(route1waypoints[i].api);
+//			}
+		});
+
+	});
+	
+}
+
+function modifyJson () {
+	$.post('/route', { sNId: "1179454137", sNName : "Facebook" } , function(data) {
+		console.log('===data===');
+		console.log(data);
+		
+		var result = JSON.parse(data);
+		
+		// .each is slow comparing to for loop
+//		$(result).each( function() {
+//			if (this.id === 1) this.title = "oo";
+//		});
+		
+		for (var i = 0; i < result.length; i++){
+			if (result[i].id === 1){ 
+				console.log("lol");
+				result[i].title = "efg";
+				break;
+			}
+		}
+		// Write back to DB
+		console.log(result);
+	});
+}
+
 function temp2 (i, waypoints, pause_time) {
 	if (i < waypoints.length + 1) {
 //		console.log("l: " + waypoints.length + 1);
 		var tempfunction = temp (i, waypoints);
 		setTimeout(tempfunction, pause_time);
-		console.log("i:" + i);
+//		console.log("i:" + i);
 	}
 }
 function temp (i, waypoints) {
@@ -208,14 +362,14 @@ function temp (i, waypoints) {
 				destination:end_place_string,
 				travelMode: google.maps.TravelMode.DRIVING
 		};
-		console.log(start_place_string + " " + end_place_string);
+//		console.log(start_place_string + " " + end_place_string);
 		
 		
 		directionsService.route(request, function(result, status) {
-			console.log(status);
+//			console.log(status);
 			if (status == google.maps.DirectionsStatus.OK) {
 				directionsDisplay.setDirections(result);
-				console.log(result);
+//				console.log(result);
 				i++;
 				temp2(i, waypoints);
 //				var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
@@ -242,6 +396,27 @@ function temp (i, waypoints) {
 		});
 	}
 	
+}
+
+
+function gm_displayAllRoute (sNId, sNName) {
+	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
+		console.log('=============data===========');
+		console.log(data);
+		
+		var result = JSON.parse(data);
+		route['id'] = result.length;
+		
+		// This is adding route.
+		result.push(route);
+		
+//		console.log(JSON.stringify(result));
+		$.post('/store', { postOption : "route", sNId: sNId, sNName : sNName, start_place : "start address", end_place : "end address", via_photos_ids : JSON.stringify(result) } , function(data) {
+			console.log('=============data===========');
+			console.log(data);
+		});
+
+	});
 }
 
 function attachInstructionText(marker, text) {
