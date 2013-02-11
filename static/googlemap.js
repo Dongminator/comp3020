@@ -13,20 +13,72 @@ function initialize() {
 
 function addHeatmapLayer () {
 	/* Data points defined as a mixture of WeightedLocation and LatLng objects */
-	var heatMapData = [];
+	// Get bounds of the current map
+	var bounds = map.getBounds();
+	var ne = bounds.getNorthEast(); // LatLng of the north-east corner
+	var sw = bounds.getSouthWest(); // LatLng of the south-west corder
 	
-	var number_of_places = places.length;
-	for (var i = 0; i < number_of_places; i++) {
-		var current_place = places[i];
-		var latLong = new google.maps.LatLng(current_place.location.latitude, current_place.location.longitude);
-		
-		heatMapData.push(latLong);
-	}
+	var nw = new google.maps.LatLng(ne.lat(), sw.lng());
+	var se = new google.maps.LatLng(sw.lat(), ne.lng());
+	
+	console.log ("lonLeft:" + sw.lng());
+	console.log ("lonRight:" + ne.lng());
+	console.log ("latTop:" + ne.lat());
+	console.log ("latBot:" + sw.lat());
+	
+	
+//	$.post('/bound', { lonLeft:sw.lng(), lonRight:ne.lng(), latTop:ne.lat(), latBot:sw.lat()} , function(data) {
+//		console.log('=====store=data===========');
+//		console.log(data);
+//		console.log('==end=store=data========');
+//		data = data.substring(1,data.length-1)
+//		var n=data.split(", ");
+//		console.log(n.length);
+//		console.log(n);
+//		
+////		var heatMapData = [];
+////		
+////		for (var i = 0; i < n.length; i++) {
+////			var latLon = n[i].substring(1,n[i].length-1)
+////			var lat = latLon.split(":")[0];
+////			var lon = latLon.split(":")[1];
+////			var latLong = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
+////			heatMapData.push(latLong);
+////		}
+////		console.log(heatMapData);
+//		
+//	});
+	
+	var heatMapData = [
+	                   new google.maps.LatLng(37.782, -122.447),
+	                   new google.maps.LatLng(37.782, -122.445),
+	                   new google.maps.LatLng(37.782, -122.443),
+	                   new google.maps.LatLng(37.782, -122.441),
+	                   new google.maps.LatLng(37.782, -122.439),
+	                   new google.maps.LatLng(37.782, -122.437),
+	                   new google.maps.LatLng(37.782, -122.435),
+	                   new google.maps.LatLng(37.785, -122.447),
+	                   new google.maps.LatLng(37.785, -122.445),
+	                   new google.maps.LatLng(37.785, -122.443),
+	                   new google.maps.LatLng(37.785, -122.441),
+	                   new google.maps.LatLng(37.785, -122.439),
+	                   new google.maps.LatLng(37.785, -122.437),
+	                   new google.maps.LatLng(37.785, -122.435)
+	                 ];
 
 	var heatmap = new google.maps.visualization.HeatmapLayer({
-	  data: heatMapData
+		data: heatMapData
 	});
 	heatmap.setMap(map);
+	
+//	var number_of_places = places.length;
+//	for (var i = 0; i < number_of_places; i++) {
+//		var current_place = places[i];
+//		var latLong = new google.maps.LatLng(current_place.location.latitude, current_place.location.longitude);
+//		
+//		heatMapData.push(latLong);
+//	}
+	
 }
 
 var start_place = null;
@@ -149,6 +201,9 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 		via_places.push(id_place_pairs[key]);
 	}
 	
+	var lats = new Array();
+	var lons = new Array();
+	
 	var route = {};
 	route['title'] = "abc";
 	route['waypoints'] = [];
@@ -159,27 +214,30 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 		route['waypoints'][i]['type'] = "photo";
 		route['waypoints'][i]['id'] = via_photos_ids[i];
 		route['waypoints'][i]['place'] = via_places[i];
+
+		lats.push(via_places[i].location.latitude);
+		lons.push(via_places[i].location.longitude);
 	}
 	
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
-		console.log('=============data===========');
-		console.log(data);
-		
+		console.log('====gm_display_route==data===========');
+//		console.log(data);
+		console.log('====end=gm_display_route==data=======');
 		var result = JSON.parse(data);
 		route['id'] = result.length;
 		
 		// This is adding route.
 		result.push(route);
 		
-//		console.log(JSON.stringify(result));
-		$.post('/store', { postOption : "route", sNId: sNId, sNName : sNName, start_place : "start address", end_place : "end address", via_photos_ids : JSON.stringify(result) } , function(data) {
-			console.log('=============data===========');
+		$.post('/store', { postOption : "route", sNId: sNId, sNName : sNName, start_place : "sa", end_place : "ea", route : JSON.stringify(result), itemIds:JSON.stringify(via_photos_ids), lats:JSON.stringify(lats), lons:JSON.stringify(lons) } , function(data) {
+			console.log('=====store=data===========');
 			console.log(data);
+			console.log('==end=store=data========');
 		});
+		
+		
 
 	});
-	
-//	console.log(via_places.length);
 	
 	var waypoints = gm_convert_waypoints(via_places); // 40 points -> 41 routes
 	
@@ -195,13 +253,21 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 }
 
 function test_storeData () {
-	var send1 = new Array();
-	send1.push("100");
-	send1.push("101");
-	
+	var send1 = new Array("100", "101");
 	var send2 = new Array();
-	send2.push("via 1");
-	send2.push("via 2");
+	
+	var place1 = '"place": {"id": "149203025119254","location": {"street": "Glasdon Unit East Camber Eastern Dock, Dover, Kent", "city": "Dover","latitude": 51.126521704244, "longitude": 1.3329200119598}}'
+	var place2 = '"place": {"id": "123456","location": {"street": "acv", "city": "dd","latitude": 1, "longitude": 2}}'
+	send2.push(place1);
+	send2.push(place2);
+	
+	var itemIds = new Array();
+	var lats = new Array();
+	var lons = new Array();
+	
+	for (var i = 0; i < send2.length; i++) {
+		
+	}
 	
 //	var myObject = {};//1
 //	myObject.route = [];//1
@@ -232,64 +298,45 @@ function test_storeData () {
 		myObject[0]['waypoints'][i]['place'] = send2[i];
 	}
 	
-	var send3 = new Array();
-	send3.push("200");
-	send3.push("201");
-	var send4 = new Array();
-	send4.push("via 3");
-	send4.push("via 4");
+	var send3 = new Array("200", "201");
+	var send4 = new Array("via 3", "via 4");
 	
 	// route2
-	var route2 = {};
-	route2['title'] = "abc";
-	route2['waypoints'] = [];
+//	var route2 = {};
+//	route2['title'] = "abc";
+//	route2['waypoints'] = [];
+//	
+//	for (var i=0; i < send3.length; i++) {
+//		route2['waypoints'].push({});
+//		route2['waypoints'][i]['api'] = "twitter";
+//		route2['waypoints'][i]['type'] = "photo";
+//		route2['waypoints'][i]['id'] = send3[i];
+//		route2['waypoints'][i]['place'] = send4[i];
+//	}
+//	
+//	// push to route JSON
+//	myObject.push(route2);
 	
-	for (var i=0; i < send3.length; i++) {
-		route2['waypoints'].push({});
-		route2['waypoints'][i]['api'] = "twitter";
-		route2['waypoints'][i]['type'] = "photo";
-		route2['waypoints'][i]['id'] = send3[i];
-		route2['waypoints'][i]['place'] = send4[i];
-	}
-	
-	// push to route JSON
-	myObject.push(route2);
-	
-	console.log(JSON.stringify(myObject));
+//	console.log(JSON.stringify(myObject));
 	
 	
-
 	
-	$.post('/route', { sNId: "1179454137", sNName : "Facebook" } , function(data) {
-		console.log('=============data===========');
-		console.log(data);
+//	$.post('/route', { sNId: "1179454137", sNName : "Facebook" } , function(data) {
+//		console.log('=============data===========');
+//		console.log(data);
+//		
+//		var result = JSON.parse(data);
+//		console.log(result.length);
+//		route2['id'] = result.length;
+//		// This is adding route.
+//		result.push(route2);
 		
-		var result = JSON.parse(data);
-		console.log(result.length);
-		route2['id'] = result.length;
-		// This is adding route.
-		result.push(route2);
-		
-		$.post('/store', { postOption : "route", sNId: "1179454137", sNName : "Facebook", start_place : "start address", end_place : "end address", via_photos_ids : JSON.stringify(result) } , function(data) {
+		$.post('/store', { postOption : "route", sNId: "1179454137", sNName : "Facebook", start_place : "sa", end_place : "ea", route : JSON.stringify(myObject), via_photos_ids : JSON.stringify(send1), via_places : JSON.stringify(send2) } , function(data) {
 			console.log('=============data===========');
 			console.log(data);
-
-			// decode json
-//			var result = JSON.parse(data);
-
-//			var route1 = result[0];
-//			var title = route1.title;
-
-//			console.log(title);
-
-//			var route1waypoints = route1.waypoints;
-
-//			for (var i = 0; i<route1waypoints.length; i++) {
-//			console.log(route1waypoints[i].api);
-//			}
 		});
 
-	});
+//	});
 	
 }
 
@@ -330,6 +377,9 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd) {
 		setTimeout(tempfunction, pause_time);
 	}
 }
+
+var overlays = new Array();
+
 function temp (i, waypoints, rStart, rEnd) {
 	return function () {
 		var start_place_string;
@@ -364,6 +414,7 @@ function temp (i, waypoints, rStart, rEnd) {
 		directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
 
 		directionsDisplay.setMap(map);
+		overlays.push(directionsDisplay);
 		
 		var request = {
 				origin:start_place_string,

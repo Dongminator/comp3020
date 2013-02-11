@@ -26,8 +26,9 @@ window.fbAsyncInit = function() {
 			sNId = response.authResponse.userID;
 			// Post store. 
 			$.post('/store', { postOption: "connect", sNName : sNName,  sNId : sNId } , function(data) {
-				console.log('=============data===========');
+				console.log('======main===data===========');
 				console.log(data);
+				console.log('======end=main=data===========');
 			});
 		} else {
 			// Redirect to login.html
@@ -751,8 +752,6 @@ function check_photo_location() {
 	}
 
 	gm_display_route(via_places, sNId, sNName);
-	
-	
 	
 }
 

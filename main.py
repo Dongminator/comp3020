@@ -9,6 +9,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from compiler.ast import IfExp
 from symbol import if_stmt
+import unicodedata
 
 
 jinja_environment = jinja2.Environment(
@@ -26,6 +27,12 @@ class SNMap (db.Model):
     snOtherInfo = db.StringProperty()
     user = db.ReferenceProperty(User)
     
+class Point (db.Model):
+    snId = db.StringProperty() # the property i.e. photo checkin ID.
+    snName = db.StringProperty()
+    user = db.ReferenceProperty()
+    lat = db.FloatProperty()
+    long = db.FloatProperty()
     
 class MainPage(webapp2.RequestHandler):
     def get(self):
@@ -76,32 +83,31 @@ class Store(webapp2.RequestHandler):
             
             start_place = self.request.get('start_place')
             end_place = self.request.get('end_place')
-            via_photos_ids = self.request.get('via_photos_ids')
-#            via_places = self.request.get('via_places')
-            
-#            self.response.out.write(start_place)
-#            self.response.out.write(end_place)
-            
-#            self.response.out.write(via_places)
+            route = self.request.get('route')
+            itemIds = self.request.get('itemIds')
+            lats = self.request.get('lats')
+            lons = self.request.get('lons')
             
             sNMap = db.GqlQuery("SELECT * FROM SNMap WHERE snId = :1 AND snName = :2", sNId, sNName)
 
-
             if sNMap.count():
-                
                 for sNEntry in sNMap:
                     user = sNEntry.user
                     
-#                    json.dump(route)
-#                    route.append(via_photos_ids)
+                    user.route = route
+#                    user.put()
                     
-                    self.response.out.write(via_photos_ids)
-                    
-                    user.route = via_photos_ids
-                    user.put()
+                    # Write to point table
+                    itemIds = json.loads(itemIds)
+                    lats = json.loads(lats)
+                    lons = json.loads(lons)
+                    for i, itemId in enumerate(itemIds) :
+                        point = Point(snId=itemId, snName=sNName, user = user, lat=lats[i], long=lons[i])
+                        point.put()
             else :
                 self.response.out.write("false")
-
+        elif postOption == "point" :
+            self.response.out.write("point")
         else:
             print 'More'
         
@@ -137,10 +143,27 @@ class Route(webapp2.RequestHandler):
         else :
             self.response.out.write("false")
             
+class Bound(webapp2.RequestHandler): 
+    def post(self):
+        lonLeft = self.request.get('lonLeft') # small
+        lonRight = self.request.get('lonRight') # large
+        
+        latTop = self.request.get('latTop') # large
+        latBot = self.request.get('latBot') # small
+        points = db.GqlQuery("SELECT * FROM Point WHERE long > :1 AND long < :2", float(lonLeft), float(lonRight))
+        latLon = []
+        if points.count():
+            for p in points:
+                lat = p.lat
+                lon = p.long
+                if lat > float(latBot) and lat < float(latTop):
+                    latLon.append(str(lat) + ":" + str(lon))
+        self.response.out.write(latLon)   
 
 app = WSGIApplication(
                       [('/', MainPage), 
                        ('/home', HomePage),
                        ('/login', MainPage),
                        ('/store', Store),
-                       ('/allRoute', Route)], debug=True)
+                       ('/allRoute', Route),
+                       ('/bound', Bound)], debug=True)
