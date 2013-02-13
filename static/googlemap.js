@@ -33,8 +33,6 @@ function addHeatmapLayer () {
 		console.log('==end=store=data========');
 		data = data.substring(1,data.length-1)
 		var n=data.split(", ");
-		console.log(n.length);
-		console.log(n);
 		
 		var heatMapData = [];
 		
@@ -45,13 +43,42 @@ function addHeatmapLayer () {
 			var latLong = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
 			heatMapData.push(latLong);
 		}
-		console.log(heatMapData);
 		var heatmap = new google.maps.visualization.HeatmapLayer({
 			data: heatMapData
 		});
 		heatmap.setMap(map);
 		
+		google.maps.event.addListener(map, 'click', function(event) {
+			// 3 seconds after the center of the map has changed, pan back to the
+			// marker.
+			var lat = event.latLng.Ya;
+			var lon = event.latLng.Za;
+			
+			console.log(lat + " " + lon);
+			gm_showInfoWindow(event.latLng);
+		});
+		
 	});
+}
+
+function gm_showInfoWindow (latLng) {
+	var contentString = '<div id="content">'+
+    '<div id="siteNotice">'+
+    '</div>'+
+    '<h2 id="firstHeading" class="firstHeading">Uluru</h2>'+
+    '<div id="bodyContent">'+
+    '<p>Attribution: Uluru, <a href="http://en.wikipedia.org/w/index.php?title=Uluru&oldid=297882194">'+
+    'http://en.wikipedia.org/w/index.php?title=Uluru</a> (last visited June 22, 2009).</p>'+
+    '</div>'+
+    '</div>';
+	var infowindow = new google.maps.InfoWindow({
+	    content: contentString
+	});
+	
+	infowindow.setPosition(latLng);
+	infowindow.open(map);
+	
+	
 }
 
 
@@ -218,7 +245,10 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 	infoWindow = new google.maps.InfoWindow();
 	var i = 0;
 	
-	temp2(i, waypoints, 0, start_place, end_place);
+	for (var j = 0; j < via_photos_ids.length; j++) {
+		via_photos_ids[j] = sNName + ":photo:" + via_photos_ids[j];
+	}
+	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids);
 //	for (var i = 0; i < waypoints.length + 1; i++) {
 //		
 //		
@@ -338,23 +368,23 @@ function modifyJson () {
 	});
 }
 
-function temp2 (i, waypoints, pause_time, rStart, rEnd) {
+function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds) {
+
 	var wpNumber = 0;
 	if (rStart || rEnd) {
 		wpNumber = waypoints.length + 1;
 	} else {
 		wpNumber = waypoints.length - 1;
 	}
-	
 	if (i < wpNumber) {
-		var tempfunction = temp (i, waypoints, rStart, rEnd);
+		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds);
 		setTimeout(tempfunction, pause_time);
 	}
 }
 
 var overlays = new Array();
 
-function temp (i, waypoints, rStart, rEnd) {
+function temp (i, waypoints, rStart, rEnd, itemIds) {
 	return function () {
 		var start_place_string;
 		var end_place_string;
@@ -402,9 +432,10 @@ function temp (i, waypoints, rStart, rEnd) {
 //			console.log(status);
 			if (status == google.maps.DirectionsStatus.OK) {
 				directionsDisplay.setDirections(result);
-//				console.log(result);
+
+				gm_displayItems(i, waypoints, itemIds);
 				i++;
-				temp2(i, waypoints, 0, rStart, rEnd);
+				temp2(i, waypoints, 0, rStart, rEnd, itemIds);
 //				var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
 //				var numberOfWaypoints = result.routes[0].legs.length - 1;
 //				console.log("Number of waypoints:" + numberOfWaypoints);
@@ -422,24 +453,57 @@ function temp (i, waypoints, rStart, rEnd) {
 //				}
 			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
 				i++;
-				temp2(i, waypoints, 0, rStart, rEnd);
+				temp2(i, waypoints, 0, rStart, rEnd, itemIds);
 			} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-				temp2(i, waypoints, 500, rStart, rEnd);// TODO 500 can be optimized. if too small, useful query will run only every second. 
+				temp2(i, waypoints, 500, rStart, rEnd, itemIds);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 			}
 		});
 	}
 	
 }
 
+function gm_displayItems (index, waypoints, itemIds) {
+	var curr_wp = waypoints[index];
+	var curr_item = itemIds[index];
+	
+	var curr_itemApi = curr_item.split(":")[0];
+	var curr_itemType = curr_item.split(":")[1];
+	var curr_itemId = curr_item.split(":")[2];
+	console.log(curr_item);
+	if (curr_itemApi === "Facebook") {
+		if (curr_itemType === "photo") {
+			fb_getImageUrl(curr_itemId, gm_displayItems_callback, waypoints[index])
+		}
+	}
+	
+	if (index === waypoints.length - 2 ) { // display the last item on the route
+		gm_displayItems (index + 1, waypoints, itemIds)
+	}
+}
+
+function gm_displayItems_callback (itemId, url, height, width, type, wp) {
+	// infowindow:
+//	var contentString = $('<img />').attr('src', url).data('api', type).data('photoId', itemId).attr('height', height).attr('width', width);
+	var contentString = '<div style="width: ' + width + 'px; height:' +height + 'px;"><img src="' + url + '"' + ' data-api="' + type + '"' + ' data-photoId="' + itemId + '"' +'></div>';
+	var infowindow = new google.maps.InfoWindow({
+	    content: contentString,
+	    maxWidth: 1000
+	});
+
+	// marker
+	var myLatlng = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
+	var marker = new google.maps.Marker({
+		position: myLatlng,
+		map: map,
+	});
+
+	google.maps.event.addListener(marker, 'click', function() {
+		infowindow.open(map,marker);
+	});
+}
 
 function gm_displayAllRoute (sNId, sNName) {
-	console.log(sNId);
-	console.log(sNName);
-	
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
-		console.log('=============data===========');
-		console.log(data);
-		
 		var routes = JSON.parse(data);
 		
 		var numberOfRoutes = routes.length;
@@ -452,6 +516,7 @@ function gm_displayAllRoute (sNId, sNName) {
 				var rTitle = route.titlel
 				var rId = route.id;
 				var rWaypoints = route.waypoints;
+				var itemIds = new Array();
 				// TODO start place, end place
 				var rStart = '';
 				var rEnd = '';
@@ -460,15 +525,16 @@ function gm_displayAllRoute (sNId, sNName) {
 				for (var j = 0; j < rWaypoints.length; j++) {
 					var wp = rWaypoints[j];
 					via_places[wp.id] = wp.place;
+					itemIds.push(wp.api + ":" + wp.type + ":" + wp.id);
 				}
-				
-				gm_displayRoute (via_places, rStart, rEnd)
+				console.log(itemIds);
+				gm_displayRoute (via_places, rStart, rEnd, itemIds)
 			}
 		}
 	});
 }
 
-function gm_displayRoute (id_place_pairs, rStart, rEnd) {
+function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds) {
 	var via_photos_ids = new Array();
 	var via_places = new Array();
 	for (var key in id_place_pairs) {
@@ -481,7 +547,7 @@ function gm_displayRoute (id_place_pairs, rStart, rEnd) {
 	infoWindow = new google.maps.InfoWindow();
 	var i = 0;
 	
-	temp2(i, waypoints, 0, rStart, rEnd);
+	temp2(i, waypoints, 0, rStart, rEnd, itemIds);
 }
 
 function attachInstructionText(marker, text) {

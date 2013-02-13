@@ -3,6 +3,7 @@ $(document).ready(function(){
 });
 
 var friend_ids = new Array();
+var friend_names = new Array();
 function loadFriendList (url) {
 	FB.api(url, function(response) {
 		
@@ -12,6 +13,11 @@ function loadFriendList (url) {
 		for (var i = 0; i < fb_friend.length; i++) {
 			if (fb_friend[i].installed) {
 				friend_ids.push(fb_friend[i].id);
+				FB.api("/" + fb_friend[i].id, function(response) {
+					console.log(response.name);
+					friend_names.push(response.name);
+					var li = $("#friend_list").find("[data-friendid='" + response.id + "']").find("p").text(response.name);
+				});
 			}
 		}
 		
@@ -37,7 +43,8 @@ function populateFriendList () {
 //			li.append(a);
 			li.append("<img src='' height='50px'></img>");
 			
-			li.append("<p>" + friend_ids[i] + "</p>");
+			
+			li.append("<p>" + friend_names[i] + "</p>");
 			
 			$('#friend_list li').click(function() {
 				displayFriendRoute( $(this).data("friendid"), "Facebook" );

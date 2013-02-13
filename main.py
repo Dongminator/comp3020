@@ -95,7 +95,7 @@ class Store(webapp2.RequestHandler):
                     user = sNEntry.user
                     
                     user.route = route
-#                    user.put()
+                    user.put()
                     
                     # Write to point table
                     itemIds = json.loads(itemIds)

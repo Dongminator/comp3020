@@ -937,6 +937,20 @@ function edit_via_points () {
 	cell2.innerHTML = "LOCATION FROM FACEBOOK PHOTO";
 }
 
+
+function fb_getImageUrl (itemId, gm_callback, wp) {
+	FB.api('/' + itemId, function(response) {
+		console.log(response);
+		var image = response.images[5];// TODO determine the size of the photo
+		var url = image.source;
+		var height = image.height;
+		var width = image.width;
+		
+		gm_callback(itemId, url, height, width, "Facebook", wp);
+	});
+	
+}
+
 //The next two functions (calculate_time_zone & convert) by Josh Fraser (http://www.onlineaspect.com)
 function calculate_time_zone() {
 	var rightNow = new Date();
