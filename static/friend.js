@@ -1,7 +1,3 @@
-$(document).ready(function(){
-	console.log("ready");
-});
-
 var friend_ids = new Array();
 var friend_names = new Array();
 function loadFriendList (url) {

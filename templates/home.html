@@ -2,7 +2,7 @@
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="static/css/home.css">
-<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css">
 {% endblock %}
 
 {% block title %}Home{% endblock %}
@@ -19,6 +19,8 @@
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCHOO41I21tKSMCzpoXI0Aizz39epDs2g&libraries=visualization,places&sensor=true"></script>
 <script src="static/googlemap.js"></script>
 <script src="static/friend.js"></script>
+
+
 
 {% endblock %}
 
@@ -45,10 +47,10 @@
 	
 	<!-- Information required: start time, start location, via points. -->
 	<button onclick="choosePhotoOption()">Create Route</button>
-	
+
 	<!-- From googlamap.js -->
 	<button onclick="addHeatmapLayer()">heat map</button>
-	
+
 </div>
 
 <div id="friend_div">
@@ -56,94 +58,6 @@
 {% endblock %}
 
 {% block dialog %}
-
-<!-- The timezone code copied from http://www.onlineaspect.com/2007/06/08/auto-detect-a-time-zone-with-javascript/ -->
-<!-- 
-<div id="create-route-dialog" class="dialog" title="Create new route">
-	<form>
-		<fieldset>
-			
-			<label for="route_title_input" class="input_label">Title:</label> 
-			<div class="label_input_wrapper">
-				<input id="route_title_input" type="text" name="route_title" />
-			</div>
-			
-			<label for="create-route-datapicker" class="input_label">Start date:</label>
-			<div class="label_input_wrapper">
-				<input id="create-route-datapicker" class="datepicker" type="text" size="20" /> 
-			</div>
-			
-			
-			<select name="timezone" id="timezone" style="width: 100%">
-					<option value="-12:00,0">(-12:00) International Date Line West</option>
-					<option value="-11:00,0">(-11:00) Midway Island, Samoa</option>
-					<option value="-10:00,0">(-10:00) Hawaii</option>
-					<option value="-09:00,1">(-09:00) Alaska</option>
-					<option value="-08:00,1">(-08:00) Pacific Time (US &amp; Canada)</option>
-					<option value="-07:00,0">(-07:00) Arizona</option>
-					<option value="-07:00,1">(-07:00) Mountain Time (US &amp; Canada)</option>
-					<option value="-06:00,0">(-06:00) Central America, Saskatchewan</option>
-					<option value="-06:00,1">(-06:00) Central Time (US &amp; Canada), Guadalajara, Mexico city</option>
-					<option value="-05:00,0">(-05:00) Indiana, Bogota, Lima, Quito, Rio Branco</option>
-					<option value="-05:00,1">(-05:00) Eastern time (US &amp; Canada)</option>
-					<option value="-04:00,1">(-04:00) Atlantic time (Canada), Manaus, Santiago</option>
-					<option value="-04:00,0">(-04:00) Caracas, La Paz</option>
-					<option value="-03:30,1">(-03:30) Newfoundland</option>
-					<option value="-03:00,1">(-03:00) Greenland, Brasilia, Montevideo</option>
-					<option value="-03:00,0">(-03:00) Buenos Aires, Georgetown</option>
-					<option value="-02:00,1">(-02:00) Mid-Atlantic</option>
-					<option value="-01:00,1">(-01:00) Azores</option>
-					<option value="-01:00,0">(-01:00) Cape Verde Is.</option>
-					<option value="00:00,0">(00:00) Casablanca, Monrovia, Reykjavik</option>
-					<option value="00:00,1">(00:00) GMT: Dublin, Edinburgh, Lisbon, London</option>
-					<option value="+01:00,1">(+01:00) Amsterdam, Berlin, Rome, Vienna, Prague, Brussels</option>
-					<option value="+01:00,0">(+01:00) West Central Africa</option>
-					<option value="+02:00,1">(+02:00) Amman, Athens, Istanbul, Beirut, Cairo, Jerusalem</option>
-					<option value="+02:00,0">(+02:00) Harare, Pretoria</option>
-					<option value="+03:00,1">(+03:00) Baghdad, Moscow, St.Petersburg, Volgograd</option>
-					<option value="+03:00,0">(+03:00) Kuwait, Riyadh, Nairobi, Tbilisi</option>
-					<option value="+03:30,0">(+03:30) Tehran</option>
-					<option value="+04:00,0">(+04:00) Abu Dhadi, Muscat</option>
-					<option value="+04:00,1">(+04:00) Baku, Yerevan</option>
-					<option value="+04:30,0">(+04:30) Kabul</option>
-					<option value="+05:00,1">(+05:00) Ekaterinburg</option>
-					<option value="+05:00,0">(+05:00) Islamabad, Karachi, Tashkent</option>
-					<option value="+05:30,0">(+05:30) Chennai, Kolkata, Mumbai, New Delhi, Sri Jayawardenepura</option>
-					<option value="+05:45,0">(+05:45) Kathmandu</option>
-					<option value="+06:00,0">(+06:00) Astana, Dhaka</option>
-					<option value="+06:00,1">(+06:00) Almaty, Nonosibirsk</option>
-					<option value="+06:30,0">(+06:30) Yangon (Rangoon)</option>
-					<option value="+07:00,1">(+07:00) Krasnoyarsk</option>
-					<option value="+07:00,0">(+07:00) Bangkok, Hanoi, Jakarta</option>
-					<option value="+08:00,0">(+08:00) Beijing, Hong Kong, Singapore, Taipei</option>
-					<option value="+08:00,1">(+08:00) Irkutsk, Ulaan Bataar, Perth</option>
-					<option value="+09:00,1">(+09:00) Yakutsk</option>
-					<option value="+09:00,0">(+09:00) Seoul, Osaka, Sapporo, Tokyo</option>
-					<option value="+09:30,0">(+09:30) Darwin</option>
-					<option value="+09:30,1">(+09:30) Adelaide</option>
-					<option value="+10:00,0">(+10:00) Brisbane, Guam, Port Moresby</option>
-					<option value="+10:00,1">(+10:00) Canberra, Melbourne, Sydney, Hobart, Vladivostok</option>
-					<option value="+11:00,0">(+11:00) Magadan, Solomon Is., New Caledonia</option>
-					<option value="+12:00,1">(+12:00) Auckland, Wellington</option>
-					<option value="+12:00,0">(+12:00) Fiji, Kamchatka, Marshall Is.</option>
-					<option value="+13:00,0">(+13:00) Nuku'alofa</option>
-				</select> 
-				
-				<label for="start_input" class="input_label">Start:</label>
-				<div id="start_div" class="label_input_wrapper">
-					<input id="start_input" type="text" name="route_title" />
-				</div>
-
-				<label id="end_label" for="end_input" class="input_label">End:</label>
-				<div class="label_input_wrapper">
-					<input id="end_input" type="text" name="route_title" />
-				</div>
-				
-				<a href="#" onclick="addViaPointInputBox()">Via</a>
-			</fieldset>
-	</form>
-</div>
- -->
  
 <div id="choose-photo-option" class="dialog" title="Photos">
 	<button onclick="upload_photo()">Upload photos</button>

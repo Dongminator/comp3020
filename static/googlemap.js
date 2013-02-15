@@ -11,6 +11,7 @@ function initialize() {
 }
 
 
+var curr_infoWindow;
 function addHeatmapLayer () {
 	/* Data points defined as a mixture of WeightedLocation and LatLng objects */
 	// Get bounds of the current map
@@ -74,6 +75,7 @@ function gm_showInfoWindow (latLng) {
 	var infowindow = new google.maps.InfoWindow({
 	    content: contentString
 	});
+	curr_infoWindow = infowindow;
 	
 	infowindow.setPosition(latLng);
 	infowindow.open(map);
@@ -167,8 +169,6 @@ function googlemap_set_marker(place) {
 	var place_name = place.name;
 	var place_lat = place.location.latitude;
 	var place_long = place.location.longitude;
-	
-	
 }
 
 //"place": {

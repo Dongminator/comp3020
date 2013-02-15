@@ -8,6 +8,11 @@
 var access_token;
 var sNName = "Facebook";
 var sNId = "";
+
+$(document).ready(function(){
+	$( "button" ).button();
+});
+
 window.fbAsyncInit = function() {
 	FB.init({
 		appId      : '151350358347579', // App ID
@@ -218,8 +223,6 @@ function populate_google_map (response, date_in_millisecond) {
 				 * Display one marker for each ID.
 				 */
 			}
-
-
 		}
 
 	}
@@ -241,7 +244,7 @@ var viaPoints = 0;
 function create_route () {
 	viaPoints = 0;
 	$("#create-route-dialog").dialog({ 
-		width: 550,
+		width: 'auto',
 		height: 400,
 		draggable: false,
 		buttons: {
@@ -303,8 +306,8 @@ function addViaPointInputBox () {
 
 function choosePhotoOption () {
 	$("#choose-photo-option").dialog({ 
-		width: 300,
-		height: 400,
+		width: 350,
+		height: 'auto',
 		draggable: false,
 		buttons: {
 			Cancel: function(){
@@ -315,61 +318,49 @@ function choosePhotoOption () {
 }
 
 function load_photos_from_facebook_dialog () {
-	console.log("load photos from facebook");
 	$("#choose-photo-option").dialog( "close" ); // Close dialog
-
-	load_photos_from_facebook_title();
+//	load_photos_from_facebook_title();
+	loading_dialog("Loading your albums information...");
+	getAllAlbumsIds("/me?fields=albums", album_selection_dialog);
 }
 
 function upload_photo () {
-	console.log("upload photo");
 	$("#choose-photo-option").dialog( "close" ); // Close dialog
 }
 
-function load_photos_from_facebook_title () {
-	$("#facebook_photo_date_location_dialog").dialog({ 
-		width: 500,
-		height: 350,
-		draggable: false,
-		buttons: {
-			Next: function(){
-				var datepicker_date = $( "#create-route-datapicker" ).datepicker( "getDate" ); // Get Date from datepicker. return "Tue Jan 01 2013 00:00:00 GMT+0000 (GMT Standard Time)"
-
-				var timezone_tag = document.getElementById("timezone"); // #timezone select tag
-				var timezone_value = timezone_tag.options[timezone_tag.selectedIndex].value; // Timezone value. return "00:00,1"
-
-				var offset_int = parseInt(timezone_value.split(":")[0]); // Get "00" then convert string to int
-
-				var utc = datepicker_date.getTime() + (datepicker_date.getTimezoneOffset() * 60000); // Return 1356998400000
-
-				var actual_date = new Date(utc - (3600000*offset_int)); // Now you have actual Date with correct timezone. return "Mon Dec 31 2012 16:00:00 GMT+0000 (GMT Standard Time) "
-
-				//TODO convert this number to facebook date format ISO-8601. then get photos after that Date.
-
-				// Now need to load fb albums.
-//				console.log(Date.parse(actual_date));
-
-				get_album_ids(Date.parse(actual_date), album_selection_dialog);
-
-				$( this ).dialog( "close" ); // Close dialog
-
-				// Next dialog: edit via points dialog
-
-				loading_dialog("Loading your albums information...");
-			}
-		}
-	});
-
-
-	// Datapicker from jQuery UI libruary
-	$("#create-route-datapicker").datepicker({
-		dateFormat: 'yy-mm-dd '
-	});
-
-	calculate_time_zone();
-
-	gm_place_autocomplete();
-}
+//function load_photos_from_facebook_title () {
+//	$("#facebook_photo_date_location_dialog").dialog({ 
+//		width: 500,
+//		height: 350,
+//		draggable: false,
+//		buttons: {
+//			Next: function(){
+//				var datepicker_date = $( "#create-route-datapicker" ).datepicker( "getDate" ); // Get Date from datepicker. return "Tue Jan 01 2013 00:00:00 GMT+0000 (GMT Standard Time)"
+//				var timezone_tag = document.getElementById("timezone"); // #timezone select tag
+//				var timezone_value = timezone_tag.options[timezone_tag.selectedIndex].value; // Timezone value. return "00:00,1"
+//				var offset_int = parseInt(timezone_value.split(":")[0]); // Get "00" then convert string to int
+//				var utc = datepicker_date.getTime() + (datepicker_date.getTimezoneOffset() * 60000); // Return 1356998400000
+//				var actual_date = new Date(utc - (3600000*offset_int)); // Now you have actual Date with correct timezone. return "Mon Dec 31 2012 16:00:00 GMT+0000 (GMT Standard Time) "
+//
+//				//TODO convert this number to facebook date format ISO-8601. then get photos after that Date.
+//				// Now need to load fb albums.
+//
+//				get_album_ids(Date.parse(actual_date), album_selection_dialog);
+//				$( this ).dialog( "close" ); // Close dialog
+//				// Next dialog: edit via points dialog
+//				loading_dialog("Loading your albums information...");
+//			}
+//		}
+//	});
+//
+//	// Datapicker from jQuery UI libruary
+//	$("#create-route-datapicker").datepicker({
+//		dateFormat: 'yy-mm-dd '
+//	});
+//
+//	calculate_time_zone();
+//	gm_place_autocomplete();
+//}
 
 function get_album_ids(parsedDate, callback){
 	var albums_updated_after_parsedDate = new Array();
@@ -377,8 +368,6 @@ function get_album_ids(parsedDate, callback){
 	FB.api('/me?fields=albums', function(response) {
 
 		var data_array = response.albums.data;
-//		console.log('Good to see you, ' + data_array[0].updated_time + '.' + data_array.length + ".");
-
 		var length = data_array.length,
 		element = null;
 		for (var i = 0; i < length; i++) {
@@ -386,37 +375,58 @@ function get_album_ids(parsedDate, callback){
 			date = element.updated_time;
 			var update_time_in_milliseconds = Date.parse(date);
 			if (update_time_in_milliseconds > parsedDate) { // photo date is after 12.31
-//				console.log(element.name + ' album ' + element.id + ' updated after new year: ' + date + '.');
 				albums_updated_after_parsedDate.push(element.id);
 			}
 		}
-
-//		console.log(albums_updated_after_parsedDate);
 		$('#loading_dialog').dialog( "close" );
-
 		callback(albums_updated_after_parsedDate, parsedDate);// album_selection_dialog
 	});
 }
 
+var allAlbumIds = new Array();
+function getAllAlbumsIds (url, callback) {
+	FB.api(url, function(response) {
+		var data;
+		var paging;
+		if (response.albums) {
+			data = response.albums.data;
+			paging = response.albums.paging;
+		} else if (response.data) {
+			data = response.data;
+			paging = response.paging;
+		}
+		for (var i = 0; i < data.length; i++) {
+			var album = data[i];
+			allAlbumIds.push(album.id);
+		}
+		if (paging && paging.next) {
+			var newUrl = paging.next.substring(26);// 26: https://graph.facebook.com/
+			getAllAlbumsIds (newUrl, callback)
+			console.log(newUrl);
+		} else {
+			console.log(allAlbumIds);
+			callback(allAlbumIds, 0);// album_selection_dialog
+		}
+	});
+}
 
 function album_selection_dialog (album_id_array, parsedDate) {
 	var selected_album_ids = new Array();
+	$('#loading_dialog').dialog( "close" );
 	$("#facebook_album_selection_dialog").dialog({ 
-		width: 1200,
+		width: 1400,
 		height: 600,
 		draggable: false,
 		buttons: {
 			Next: function(){
 				$( this ).dialog( "close" ); // Close dialog
-
-				// TODO go to next dialog -> select photo
 				photo_selection_dialog(selected_album_ids, parsedDate);
 			}
 		}
 	});
 
 	var number_of_albums = album_id_array.length;
-	var images_each_row = 4; // This need to be dynamically generated given the width of the window. 
+	var images_each_row = 4; // TODO This need to be dynamically generated given the width of the window. 
 
 	var cover_photo_table = document.getElementById("album_cover_photo_table");
 	var row;
@@ -451,12 +461,10 @@ function album_selection_dialog (album_id_array, parsedDate) {
 		if (selected_album_ids.indexOf(selected_album_id) !== -1) {
 			var index = selected_album_ids.indexOf(selected_album_id);
 			selected_album_ids.splice(index, 1);
-
 			// Unhighlight all the images
 			$(this).removeClass('highlighted');
 		} else {
 			selected_album_ids.push(selected_album_id);
-
 			// Highlight the newly selected image
 			$(this).addClass('highlighted');
 		}
@@ -467,30 +475,13 @@ function album_selection_dialog (album_id_array, parsedDate) {
 var curr_album_photos_count_after_given_date = 0;
 var curr_album_photos_ids_after_given_date = new Array();
 function photo_selection_dialog (albumIds, parsedDate) {
-	$("#facebook_photo_selection_dialog").dialog({ 
-		width: 1200,
-		height: 600,
-		draggable: false,
-		buttons: {
-			Next: function(){
-				$( this ).dialog( "close" ); // Close dialog
-
-				check_photo_location();
-
-				// TODO next to load status and check-in
-				sc_select_dialog(parsedDate);
-			}
-		}
-	});
-
+	loading_dialog("Loading your photos...");
 	// TODO validate at least one album is chosen.
-
 	if (albumIds.length === 1) {
 		// Display photos in FB.api callback function.
 		fb_get_photos('/' + albumIds[0] + '?fields=photos', parsedDate);
 	} else {
 //		console.log ("More than one albums are chosen:" + albumIds);
-
 	}
 }
 
@@ -665,6 +656,20 @@ function fb_get_checkin (url, parsedDate) {
 var selected_photos = new Array(); // In the select photo dialog, the photos selected by the users. These photos will be shown on route.
 var photo_location_table = {};
 function displayPhotos () {
+	$('#loading_dialog').dialog( "close" );
+	$("#facebook_photo_selection_dialog").dialog({ 
+		width: 1200,
+		height: 600,
+		draggable: false,
+		buttons: {
+			Next: function(){
+				$( this ).dialog( "close" ); // Close dialog
+				check_photo_location();
+				sc_select_dialog(parsedDate);
+			}
+		}
+	});
+	
 	var images_per_row = 5;
 
 	$('#facebook_photo_selection_dialog').append("<a href=\"javascript:void(0)\" onClick=\"selectAllPhotos('facebook_photo_selection_dialog')\">Select All</a> ");
@@ -1011,8 +1016,9 @@ function convert(value) {
 
 function loading_dialog (displayedText) {
 	$("#loading_dialog").dialog({ 
-		width: 250,
+		width: 'auto', 
 		height: 130,
 		draggable: false
 	});
+	$('#loading_dialog p').text(displayedText);
 }
