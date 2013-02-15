@@ -1,7 +1,4 @@
-//Additional JS functions here
-
 //All pages need to check login status.
-
 //Only login page will invoke login function.
 
 //TODO: ISSUE: if more than 1 album is fetched, photos from diff albums are mixed. 
@@ -26,7 +23,6 @@ window.fbAsyncInit = function() {
 	FB.getLoginStatus(function(response) {
 		if (response.status === 'connected') {
 			// connected
-//			document.getElementById('fb-logout').style.display = 'block';
 			access_token = response.authResponse.accessToken
 			sNId = response.authResponse.userID;
 			// Post store. 
@@ -59,178 +55,6 @@ function logout() {
 
 var album_ids = new Array();
 
-function testAPI(date_in_millisecond) {
-//	console.log('Welcome!  Fetching your information.... ');
-	FB.api('/me?fields=albums', function(response) {
-
-		var data_array = response.albums.data;
-//		console.log('Good to see you, ' + data_array[0].updated_time + '.' + data_array.length + ".");
-
-		var length = data_array.length,
-		element = null;
-		for (var i = 0; i < length; i++) {
-			element = data_array[i];
-			date = element.updated_time;
-			var update_time_in_milliseconds = Date.parse(date);
-			if (update_time_in_milliseconds > date_in_millisecond) { // photo date is after 12.31
-//				console.log(element.name + ' album ' + element.id + ' updated after new year: ' + date + '.');
-				album_ids.push(element.id);
-			}
-		}
-
-		var number_of_albums = album_ids.length, album = null;
-		var number_of_photos = 0;
-
-		for (var i = 0; i < number_of_albums; i++) {
-			album = album_ids[i];
-			get_photos(('/' + album + '?fields=photos'), date_in_millisecond);
-		}
-	});
-}
-
-var count = 0;
-
-function get_photos (url, date_in_millisecond) {
-	FB.api(url, function(response) {
-//		console.log(response);
-//		output_photos(response, date_in_millisecond);
-
-
-		populate_google_map(response, date_in_millisecond);
-
-
-		if (response.photos) { // first page of photos. 
-			if(response.photos.paging && response.photos.paging.next) {
-				new_url = response.photos.paging.next.substring(26);
-//				console.log(new_url);
-				get_photos(new_url, date_in_millisecond); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
-			}
-		} else { // not first page -> 2,3,4... pages. Only have one data field. 
-			if (response.paging.next) {
-				new_url = response.paging.next.substring(26);
-//				console.log(new_url);
-				get_photos(new_url, date_in_millisecond); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
-			}
-		}
-
-	});
-}
-
-
-var places = [];
-
-/*
- * TODO: should let user know when the photo loading process is finished. 
- * TODO: don't add another img tag. Add to map marker. NOTE: milli_second needs to be changed.
- */
-function output_photos (response, date_in_millisecond) {
-	var photos = null;
-
-	if (response.photos) {
-		photos = response.photos.data;
-	} else {
-		photos = response.data;
-	}
-
-	var number_of_photos = photos.length;
-	var photo = null;
-	for (var j = 0; j < number_of_photos; j++) {
-		photo = photos[j];
-		var created_time = photo.created_time;
-		var created_time_millisecond = Date.parse(created_time);
-
-
-		if (created_time_millisecond > date_in_millisecond) {
-			var img = document.createElement("img");
-			url = photo.images[4].source; // TODO size of photo
-			img.src = url;
-			var src = document.getElementById("feed");
-			src.appendChild(img);
-			count = count + 1;
-
-			/*
-			 * TODO: location should be stored in the database with the number of visits. 
-			 * If user manually modifies the location i.e. drag the marker, the location information should be overwriten and stored in the DB.
-			 */
-			if (photo.place) { // Check place property is set for the photo.
-				var place = photo.place; // load the place fields. (include .lat, .long, .zip etc)
-				places.push(place);
-			} 
-		}
-
-	}
-}
-
-
-var last_location = null;
-function populate_google_map (response, date_in_millisecond) {
-	var photos = null;
-
-	if (response.photos) {
-		photos = response.photos.data;
-	} else {
-		photos = response.data;
-	}
-
-	var number_of_photos = photos.length;
-	var photo = null;
-
-	for (var j = 0; j < number_of_photos; j++) {
-		photo = photos[j];
-		var created_time = photo.created_time;
-		var created_time_millisecond = Date.parse(created_time);
-
-		if (created_time_millisecond > date_in_millisecond) {
-
-			/*
-			 * TODO: PROCESS:
-			 * 1. check if location set from FB
-			 *  -> exist: check if marker at location set. 
-			 *  	-> set: reset
-			 *  	-> not set: set new marker
-			 *  -> not exist: place this image at last location. REQUIRE: store last location.
-			 *  	-> if last location does not exist: set a flag?
-			 *  
-			 *  THIS PROCESS IS PAUSED. WAIT FOR ROUTE TO BE COMPLETED
-			 */
-
-			if (photo.place) { // Place is set
-				googlemap_set_marker(photo.place, false);
-				last_location = photo.place;
-			} else {
-//				if (last_location) {
-//				googlemap_set_marker(photo.place, last_location);
-//				}
-			}
-
-			url = photo.images[4].source; // TODO size of photo
-
-
-			count = count + 1;
-
-			/*
-			 * TODO: location should be stored in the database with the number of visits. 
-			 * If user manually modifies the location i.e. drag the marker, the location information should be overwriten and stored in the DB.
-			 */
-			if (photo.place) { // Check place property is set for the photo.
-				var place = photo.place; // load the place fields. (include .lat, .long, .zip etc)
-				places.push(place);
-
-				/*
-				 * Store place ID from FB
-				 * Store IDs in array
-				 * Check if ID is in array
-				 * Display one marker for each ID.
-				 */
-			}
-		}
-
-	}
-}
-
-
-
-
 //Load the SDK Asynchronously
 (function(d){
 	var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
@@ -240,24 +64,6 @@ function populate_google_map (response, date_in_millisecond) {
 	ref.parentNode.insertBefore(js, ref);
 }(document));
 
-var viaPoints = 0;
-
-
-function addViaPointInputBox () {
-
-
-//	<label for="via1" class="via1_label">Via:</label>
-//	<div class="label_input_wrapper">
-//	<input id="via1_input" type="text" name="via1" />
-//	</div>
-	var label="<label for=\"via" + viaPoints + "\" class=\"input_label\">Via:</label>";                    // Create element with HTML
-	var div="<div class=\"label_input_wrapper\"><input id=\"via" + viaPoints + "_input\" class=\"via_input\" type=\"text\" name=\"via" + viaPoints + "\" /></div>" // Create with jQuery
-	$("#end_label").before(label, div);          // Insert new elements after img
-
-	gm_addAutoComplete(viaPoints);
-
-	viaPoints = viaPoints + 1;
-}
 
 function choosePhotoOption () {
 	$("#choose-photo-option").dialog({ 
@@ -459,8 +265,8 @@ function sc_select_dialog (parsedDate) {
 	$("#sc_list_ul").before("<a href=\"javascript:void(0)\" onClick=\"selectAllStatusCheckin('fb_sc_select_dialog')\">Select All</a> ");// TODO selectAllStatusAndCheckIn
 
 	// Get status & check-ins
-	fb_get_status('/me?fields=statuses', parsedDate = 1352160000000);// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
-	fb_get_checkin('/me?fields=checkins', parsedDate = 1352160000000);
+	fb_get_status('/me?fields=statuses', parsedDate);// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
+	fb_get_checkin('/me?fields=checkins', parsedDate);
 }
 
 function fb_get_photos (url, parsedDate) {
@@ -620,7 +426,7 @@ function displayPhotos () {
 			Next: function(){
 				$( this ).dialog( "close" ); // Close dialog
 				check_photo_location();
-				sc_select_dialog(parsedDate);
+				sc_select_dialog(0);
 			}
 		}
 	});
@@ -699,20 +505,13 @@ function selectAllPhotos (div_name) {
 }
 
 function check_photo_location() {
-	// 
-	console.log("...");
-	console.log(start_place);
-	console.log(selected_photos);
-	console.log(photo_location_table);
 	var via_places = new Array();
 	for (var i = 0; i < selected_photos.length; i++) {
 		if ( photo_location_table[selected_photos[i]] ) {
 			via_places[selected_photos[i]] = photo_location_table[selected_photos[i]];
 		}
 	}
-
 	gm_display_route(via_places, sNId, sNName);
-	
 }
 
 function getImageTag(pId, callback, marker) {
@@ -756,7 +555,6 @@ function displayStatusCheckin (count, ids, service) {
 			$($("#sc_list_ul li").get().reverse()).each(function(index) {
 				if (Date.parse(fb_date) > id_time[$(this).attr('data-scid')]) {
 					if ( $('#sc_list_ul li').last().attr('data-scId') === $(this).attr('data-scId') ) {
-						console.log('last li');
 						var li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
 						$(this).before(li);
 						

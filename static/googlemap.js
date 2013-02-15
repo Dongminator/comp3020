@@ -469,7 +469,6 @@ function gm_displayItems (index, waypoints, itemIds) {
 	var curr_itemApi = curr_item.split(":")[0];
 	var curr_itemType = curr_item.split(":")[1];
 	var curr_itemId = curr_item.split(":")[2];
-	console.log(curr_item);
 	if (curr_itemApi === "Facebook") {
 		if (curr_itemType === "photo") {
 			fb_getImageUrl(curr_itemId, gm_displayItems_callback, waypoints[index])
