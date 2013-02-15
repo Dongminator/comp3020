@@ -241,51 +241,6 @@ function populate_google_map (response, date_in_millisecond) {
 }(document));
 
 var viaPoints = 0;
-function create_route () {
-	viaPoints = 0;
-	$("#create-route-dialog").dialog({ 
-		width: 'auto',
-		height: 400,
-		draggable: false,
-		buttons: {
-			Create: function(){
-
-				var datepicker_date = $( "#create-route-datapicker" ).datepicker( "getDate" ); // Get Date from datepicker. return "Tue Jan 01 2013 00:00:00 GMT+0000 (GMT Standard Time)"
-
-				var timezone_tag = document.getElementById("timezone"); // #timezone select tag
-				var timezone_value = timezone_tag.options[timezone_tag.selectedIndex].value; // Timezone value. return "00:00,1"
-
-				var offset_int = parseInt(timezone_value.split(":")[0]); // Get "00" then convert string to int
-
-				var utc = datepicker_date.getTime() + (datepicker_date.getTimezoneOffset() * 60000); // Return 1356998400000
-
-				var actual_date = new Date(utc - (3600000*offset_int)); // Now you have actual Date with correct timezone. return "Mon Dec 31 2012 16:00:00 GMT+0000 (GMT Standard Time) "
-
-				//TODO convert this number to facebook date format ISO-8601. then get photos after that Date.
-
-				display_route();
-
-
-				testAPI(Date.parse(actual_date));
-
-
-				$( this ).dialog( "close" ); // Close dialog
-			},
-			Cancel: function(){
-				$( this ).dialog( "close" ); // Close dialog
-			}
-		}
-	});
-
-	// Datapicker from jQuery UI libruary
-	$("#create-route-datapicker").datepicker({
-		dateFormat: 'yy-mm-dd '
-	});
-
-	calculate_time_zone();
-
-	gm_place_autocomplete();
-}
 
 
 function addViaPointInputBox () {
@@ -945,7 +900,6 @@ function edit_via_points () {
 
 function fb_getImageUrl (itemId, gm_callback, wp) {
 	FB.api('/' + itemId, function(response) {
-		console.log(response);
 		var image = response.images[5];// TODO determine the size of the photo
 		var url = image.source;
 		var height = image.height;

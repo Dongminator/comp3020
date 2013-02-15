@@ -432,7 +432,7 @@ function temp (i, waypoints, rStart, rEnd, itemIds) {
 //			console.log(status);
 			if (status == google.maps.DirectionsStatus.OK) {
 				directionsDisplay.setDirections(result);
-
+				directionsDisplay.setOptions({ preserveViewport: true });
 				gm_displayItems(i, waypoints, itemIds);
 				i++;
 				temp2(i, waypoints, 0, rStart, rEnd, itemIds);
