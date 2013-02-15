@@ -157,7 +157,6 @@ function addAutocompleteListener (autocomplete, option) {
 /*
  * Knowing two points and via points (waypoint), generate the route and display on Google map.
  */
-
 var infoWindow;
 var markerArray = [];
 function gm_display_route (id_place_pairs, sNId, sNName) {
@@ -203,9 +202,6 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 			console.log(data);
 			console.log('==end=store=data========');
 		});
-		
-		
-
 	});
 	
 	var waypoints = gm_convert_waypoints(via_places); // 40 points -> 41 routes
@@ -217,10 +213,13 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 		via_photos_ids[j] = sNName + ":photo:" + via_photos_ids[j];
 	}
 	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids);
-//	for (var i = 0; i < waypoints.length + 1; i++) {
-//		
-//		
-//	}
+	
+	var markerBounds = new google.maps.LatLngBounds();
+	for (var j = 0; j < waypoints.length; j++) {
+		var wp = new google.maps.LatLng( waypoints[j].split(",")[0], waypoints[j].split(",")[1] );
+		markerBounds.extend(wp);
+	}
+	map.fitBounds(markerBounds);
 	// TODO: issue: when create new one, need to remove old routes.
 }
 
@@ -494,7 +493,6 @@ function gm_displayAllRoute (sNId, sNName) {
 					via_places[wp.id] = wp.place;
 					itemIds.push(wp.api + ":" + wp.type + ":" + wp.id);
 				}
-				console.log(itemIds);
 				gm_displayRoute (via_places, rStart, rEnd, itemIds)
 			}
 		}
