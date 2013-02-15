@@ -154,38 +154,6 @@ function addAutocompleteListener (autocomplete, option) {
 }
 
 
-//THIS PROCESS IS PAUSED. WAIT FOR ROUTE TO BE COMPLETED
-var place_ids = new Array();
-var markers = new Array();
-function googlemap_set_marker(place) {
-	var place_id = place.id;
-	
-	if (place_id in place_ids) {
-		// Update marker
-	} else { // New place
-		place_ids.push(place_id);
-	}
-	
-	var place_name = place.name;
-	var place_lat = place.location.latitude;
-	var place_long = place.location.longitude;
-}
-
-//"place": {
-//	"id": "149203025119254", 
-//	"name": "Dover Ferry Port", 
-//	"location": {
-//		"street": "Glasdon Unit East Camber Eastern Dock, Dover, Kent", 
-//		"city": "Dover", 
-//		"state": "", 
-//		"country": "United Kingdom", 
-//		"zip": "CT16 1JA", 
-//		"latitude": 51.126521704244, 
-//		"longitude": 1.3329200119598
-//	}
-//}
-
-
 /*
  * Knowing two points and via points (waypoint), generate the route and display on Google map.
  */
