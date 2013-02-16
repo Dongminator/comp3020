@@ -19,9 +19,6 @@
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCHOO41I21tKSMCzpoXI0Aizz39epDs2g&libraries=visualization,places&sensor=true"></script>
 <script src="static/googlemap.js"></script>
 <script src="static/friend.js"></script>
-
-
-
 {% endblock %}
 
 
@@ -42,19 +39,26 @@
 
 {% block content %}
 <div id="map"></div>
-<div id="feed">
-	<p>This is home page</p>
+<div id="tabs">
+	<ul>
+    	<li><a href="#feed">Feed</a></li>
+    	<li><a href="#friend_div">Friends</a></li>
+  	</ul>
+	<div id="feed">
+		<p>This is home page</p>
 	
-	<!-- Information required: start time, start location, via points. -->
-	<button onclick="choosePhotoOption()">Create Route</button>
+		<!-- Information required: start time, start location, via points. -->
+		<button onclick="choosePhotoOption()">Create Route</button>
+	
+		<!-- From googlamap.js -->
+		<button onclick="addHeatmapLayer()">heat map</button>
 
-	<!-- From googlamap.js -->
-	<button onclick="addHeatmapLayer()">heat map</button>
+	</div>
 
+	<div id="friend_div"></div>
 </div>
 
-<div id="friend_div">
-</div>
+
 {% endblock %}
 
 {% block dialog %}

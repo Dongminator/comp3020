@@ -4,7 +4,12 @@ function initialize() {
 	var mapOptions = {
 			center : new google.maps.LatLng(50, 0),
 			zoom : 4,
-			mapTypeId : google.maps.MapTypeId.ROADMAP
+			mapTypeId : google.maps.MapTypeId.ROADMAP,
+			mapTypeControl: true,
+			mapTypeControlOptions: {
+		        style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+		        position: google.maps.ControlPosition.TOP_LEFT
+		    }
 	};
 	map = new google.maps.Map(document.getElementById("map"),
 			mapOptions);

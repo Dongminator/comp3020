@@ -8,6 +8,13 @@ var sNId = "";
 
 $(document).ready(function(){
 	$( "button" ).button();
+	$( "#tabs" ).tabs();
+	
+	$("#tabs").hover(function(){
+	    $(this).animate({ opacity:0.8 });
+	}, function() {
+	    $(this).animate({ opacity:0.2 });
+	});
 });
 
 window.fbAsyncInit = function() {

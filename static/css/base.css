@@ -15,10 +15,8 @@ body{
 
 #navigation{
 	background-color: #778899;
-	background-image:none;
 	background-position:0 -138px;
-	background-repeat:repeat-x;
-	height:5%;
+	height:25px;
 	opacity:1;
 	position:fixed;
 	top:0;
@@ -39,5 +37,5 @@ p.navigation{
 	/* This height is important. */
 	height : 95%;
 	position : relative;
-	top:5%;
+	top:25px;
 }
