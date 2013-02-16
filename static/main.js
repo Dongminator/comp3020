@@ -11,9 +11,9 @@ $(document).ready(function(){
 	$( "#tabs" ).tabs();
 	
 	$("#tabs").hover(function(){
-	    $(this).animate({ opacity:0.8 });
+	    $(this).stop(true, false).animate({ opacity:0.8  });// in
 	}, function() {
-	    $(this).animate({ opacity:0.2 });
+	    $(this).stop(true, false).animate({ opacity:0.2 });// out
 	});
 });
 
