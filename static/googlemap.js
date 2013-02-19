@@ -452,7 +452,11 @@ function gm_displayItems_callback (itemId, url, height, width, type, wp, markerI
 	routes[key] = marker;
 	
 	google.maps.event.addListener(marker, 'click', function() {
+		if (curr_infoWindow) {
+			curr_infoWindow.close();
+		}
 		infowindow.open(map,marker);
+		curr_infoWindow = infowindow;
 	});
 }
 
@@ -505,13 +509,6 @@ function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds, stamp) {
 	
 	temp2(i, waypoints, 0, rStart, rEnd, itemIds, stamp);
 }
-
-function attachInstructionText(marker, text) {
-	  google.maps.event.addListener(marker, 'click', function() {
-		  infoWindow.setContent(text);
-		  infoWindow.open(map, marker);
-	  });
-	}
 
 function gm_convert_waypoints (via_places) {
 	var waypoints = [];
