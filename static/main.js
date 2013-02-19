@@ -32,19 +32,23 @@ window.fbAsyncInit = function() {
 			// connected
 			access_token = response.authResponse.accessToken
 			sNId = response.authResponse.userID;
+//			FB.api('/' + sNId, function(response) {
+//				var name = response.name;
+//				$('#meTab').find('a:first').text('My routes');
+//			});
 			// Post store. 
 			$.post('/store', { postOption: "connect", sNName : sNName,  sNId : sNId } , function(data) {
-				console.log('======main===data===========');
-				console.log(data);
-				console.log('======end=main=data===========');
 			});
+			
+			addSelectAllButton();
+			loadFriendList('/me/friends?fields=installed');// in friend.js
+			
+			populateMyRoutes(sNId, 'Facebook');
 		} else {
 			// Redirect to login.html
 			window.location = "/login";
 //			document.getElementById('fb-logout').style.display = 'block';
 		}
-		loadFriendList('/me/friends?fields=installed');// in friend.js
-
 	});
 
 	FB.Event.subscribe('auth.logout', function(response) {
@@ -518,7 +522,7 @@ function check_photo_location() {
 			via_places[selected_photos[i]] = photo_location_table[selected_photos[i]];
 		}
 	}
-	gm_display_route(via_places, sNId, sNName);
+	gm_display_route(via_places, sNId, sNName, new Date().getTime());
 }
 
 function getImageTag(pId, callback, marker) {
@@ -703,14 +707,14 @@ function edit_via_points () {
 }
 
 
-function fb_getImageUrl (itemId, gm_callback, wp) {
+function fb_getImageUrl (itemId, gm_callback, wp, markerImage, timestamp) {
 	FB.api('/' + itemId, function(response) {
 		var image = response.images[5];// TODO determine the size of the photo
 		var url = image.source;
 		var height = image.height;
 		var width = image.width;
 		
-		gm_callback(itemId, url, height, width, "Facebook", wp);
+		gm_callback(itemId, url, height, width, "Facebook", wp, markerImage, timestamp);
 	});
 	
 }
@@ -780,4 +784,87 @@ function loading_dialog (displayedText) {
 		draggable: false
 	});
 	$('#loading_dialog p').text(displayedText);
+}
+
+function deletePoints () {
+	$.post('/delete', { option: "allPoints"} , function(data) {
+		
+	});
+}
+
+var selectedRoutes = new Array();
+function populateMyRoutes (id, sn) {
+	$('<button></button>', {
+		text: 'Display All',
+		click: function () { 
+			selectedRoutes.splice(0, selectedRoutes.length);
+			var timestamps = new Array();
+			$('#my_route_list li').each(function( index ) {
+				$(this).addClass('highlightedRoute');
+				selectedRoutes.push($(this).attr('data-routeId'));
+				
+				var timestamp = new Date().getTime();
+				while (timestamps.indexOf(timestamp) !== -1) {
+					timestamp = new Date().getTime();
+				}
+				timestamps.push(timestamp);
+				$(this).attr('data-timestamp', timestamp);
+			});
+			gm_displayAllRoute (id, sn);
+		}
+	}).appendTo('#me').button();
+	
+	$.post('/allRoute', { sNId: id, sNName : sn } , function(data) {
+		var routes = JSON.parse(data);
+		
+		var numberOfRoutes = routes.length;
+		if (numberOfRoutes === 0) {
+			$('<p></p>').text("You have not created any route.").appendTo('#me');
+		} else {
+			var unordered_list = $('<ul></ul>').attr('id', 'my_route_list').attr('class', 'ipList'); // Create a ul tag
+			$('#me').append(unordered_list); // Append ul to the dialog div
+			for (var i = 0; i < numberOfRoutes; i++) {
+				var route = routes[i];
+				var rTitle = route.title;
+				var rId = route.id;
+				var rWaypoints = route.waypoints;
+				var itemIds = new Array();
+				// TODO start place, end place
+				var rStart = '';
+				var rEnd = '';
+				
+				var via_places = new Array();
+				for (var j = 0; j < rWaypoints.length; j++) {
+					var wp = rWaypoints[j];
+					via_places[wp.id] = wp.place;
+					itemIds.push(wp.api + ":" + wp.type + ":" + wp.id);
+				}
+				
+				if (!rTitle) {
+					rTitle = "Untitled route " + (i + 1);
+				}
+				var li = $('<li/>').attr('data-sNId', id).attr('data-api', sn).attr('data-rId', rId).appendTo(unordered_list);
+				li.append("<p>" + rTitle + "</p>");
+				
+				$('#my_route_list li').click(function() {
+					var selectedRoute = $(this).attr('data-routeId');
+					if (selectedRoutes.indexOf(selectedRoute) !== -1) {
+						var index = selectedRoutes.indexOf(selectedRoute);
+						var stamp = $(this).attr('data-sNId') + ':' + $(this).attr('data-api') + ':' + $(this).attr('data-rId');
+						gm_removeRoute(stamp);
+						selectedRoutes.splice(index, 1);
+						// Unhighlight all the images
+						$(this).removeClass('highlightedRoute');
+					} else {
+						selectedRoutes.push(selectedRoute);
+						// Highlight the newly selected image
+						var stamp = id + ":" + sn + ":" + rId;
+						gm_displayRoute (via_places, rStart, rEnd, itemIds, stamp);
+						$(this).addClass('highlightedRoute');
+					}
+				});
+			}
+		}
+	});
+	
 }

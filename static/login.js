@@ -1,8 +1,6 @@
-//Additional JS functions here
-
-// All pages need to check login status.
-
-// Only login page will invoke login function.
+$(document).ready(function(){
+	$( "button" ).button();
+});
 
 
 window.fbAsyncInit = function() {

@@ -12,6 +12,7 @@
 	top: 0;
 	right : 0;
 	width: 25%;
+	height: 80%;
 }
 
 
@@ -70,4 +71,8 @@
 
 .highlighted {
     border: 2px solid blue;
+}
+
+.highlightedFriend, .highlightedRoute {
+    background-color: #BDBDBD;
 }

@@ -17,57 +17,63 @@ function initialize() {
 
 
 var curr_infoWindow;
-function addHeatmapLayer () {
-	/* Data points defined as a mixture of WeightedLocation and LatLng objects */
-	// Get bounds of the current map
-	var bounds = map.getBounds();
-	var ne = bounds.getNorthEast(); // LatLng of the north-east corner
-	var sw = bounds.getSouthWest(); // LatLng of the south-west corder
+function gm_addHeatmapLayer (selectedFriendIds) {
 	
-	var nw = new google.maps.LatLng(ne.lat(), sw.lng());
-	var se = new google.maps.LatLng(sw.lat(), ne.lng());
-	
-	console.log ("lonLeft:" + sw.lng());
-	console.log ("lonRight:" + ne.lng());
-	console.log ("latTop:" + ne.lat());
-	console.log ("latBot:" + sw.lat());
-	
-	
-	$.post('/bound', { lonLeft:sw.lng(), lonRight:ne.lng(), latTop:ne.lat(), latBot:sw.lat()} , function(data) {
-		console.log('=====store=data===========');
-		console.log(data);
-		console.log('==end=store=data========');
-		data = data.substring(1,data.length-1)
-		var n=data.split(", ");
+	if (selectedFriendIds.length !== 0) {
+		/* Data points defined as a mixture of WeightedLocation and LatLng objects */
+		// Get bounds of the current map
+		var bounds = map.getBounds();
+		var ne = bounds.getNorthEast(); // LatLng of the north-east corner
+		var sw = bounds.getSouthWest(); // LatLng of the south-west corder
 		
-		var heatMapData = [];
+		var nw = new google.maps.LatLng(ne.lat(), sw.lng());
+		var se = new google.maps.LatLng(sw.lat(), ne.lng());
 		
-		for (var i = 0; i < n.length; i++) {
-			var latLon = n[i].substring(1,n[i].length-1)
-			var lat = latLon.split(":")[0];
-			var lon = latLon.split(":")[1];
-			var latLong = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
-			heatMapData.push(latLong);
-		}
-		var heatmap = new google.maps.visualization.HeatmapLayer({
-			data: heatMapData
+		console.log ("lonLeft:" + sw.lng());
+		console.log ("lonRight:" + ne.lng());
+		console.log ("latTop:" + ne.lat());
+		console.log ("latBot:" + sw.lat());
+		
+		$.post('/bound', { lonLeft:sw.lng(), lonRight:ne.lng(), latTop:ne.lat(), latBot:sw.lat(), friendList:JSON.stringify(selectedFriendIds)} , function(data) {
+			console.log('=====store=data===========');
+			console.log(data);
+			console.log('==end=store=data========');
+			if (data) {
+				data = data.substring(1,data.length-1)
+				var n=data.split(", ");
+				
+				var heatMapData = [];
+				
+				for (var i = 0; i < n.length; i++) {
+					var latLon = n[i].substring(1,n[i].length-1)
+					var lat = latLon.split(":")[0];
+					var lon = latLon.split(":")[1];
+					var latLong = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
+					heatMapData.push(latLong);
+				}
+				var heatmap = new google.maps.visualization.HeatmapLayer({
+					data: heatMapData
+				});
+				heatmap.setMap(map);
+				
+				google.maps.event.addListener(map, 'click', function(event) {
+					// 3 seconds after the center of the map has changed, pan back to the
+					// marker.
+					var lat = event.latLng.Ya;
+					var lon = event.latLng.Za;
+					
+					console.log(lat + " " + lon);
+					gm_showInfoWindow(event.latLng);
+				});
+			} else {
+				console.log("no data returned");
+			}
 		});
-		heatmap.setMap(map);
-		
-		google.maps.event.addListener(map, 'click', function(event) {
-			// 3 seconds after the center of the map has changed, pan back to the
-			// marker.
-			var lat = event.latLng.Ya;
-			var lon = event.latLng.Za;
-			
-			console.log(lat + " " + lon);
-			gm_showInfoWindow(event.latLng);
-		});
-		
-	});
+	}
 }
 
 function gm_showInfoWindow (latLng) {
+	curr_infoWindow.close();
 	var contentString = '<div id="content">'+
     '<div id="siteNotice">'+
     '</div>'+
@@ -84,8 +90,6 @@ function gm_showInfoWindow (latLng) {
 	
 	infowindow.setPosition(latLng);
 	infowindow.open(map);
-	
-	
 }
 
 
@@ -116,46 +120,20 @@ function gm_addAutoComplete (viaPointNumber) {
 
 function addAutocompleteListener (autocomplete, option) {
 	google.maps.event.addListener(autocomplete, 'place_changed', function() {
-		  var place = autocomplete.getPlace();
-		  if (!place.geometry) {
-		    // Inform the user that a place was not found and return.
-		    return;
-		  }
-		  
-		  if (option === 0) { // Start place
-			  start_place = place;
-		  } else if (option === 1) {
-			  end_place = place;
-		  } else if (option === 2) {
-			  via_points.push = place;
-		  }
+		var place = autocomplete.getPlace();
+		if (!place.geometry) {
+			// Inform the user that a place was not found and return.
+			return;
+		}
 
-//		  // If the place has a geometry, then present it on a map.
-//		  if (place.geometry.viewport) {
-//		    // Use the viewport if it is provided.
-//		    map.fitBounds(place.geometry.viewport);
-//		  } else {
-//		    // Otherwise use the location and set a chosen zoom level.
-//		    map.setCenter(place.geometry.location);
-//		    map.setZoom(17);
-//		  }
-//		  
-//		  var marker = new google.maps.Marker({
-//			  positoin : new google.maps.LatLng(-25.363882,131.044922),
-//			  map: map
-//		  });
-//		  
-//		  var image = new google.maps.MarkerImage(
-//		      place.icon, new google.maps.Size(71, 71),
-//		      new google.maps.Point(0, 0), new google.maps.Point(17, 34),
-//		      new google.maps.Size(35, 35));
-//		  marker.setIcon(image);
-//		  marker.setPosition(place.geometry.location);
-//		  
-//		  var infowindow = new google.maps.InfoWindow();
-//		  infowindow.setContent(place.name);
-//		  infowindow.open(map, marker);
-		});
+		if (option === 0) { // Start place
+			start_place = place;
+		} else if (option === 1) {
+			end_place = place;
+		} else if (option === 2) {
+			via_points.push = place;
+		}
+	});
 }
 
 
@@ -164,7 +142,7 @@ function addAutocompleteListener (autocomplete, option) {
  */
 var infoWindow;
 var markerArray = [];
-function gm_display_route (id_place_pairs, sNId, sNName) {
+function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 	// via_places: places of photos with geographical information
 	// via_places: key -> value pairs: photo ID, places of photos with geographical information
 	var via_photos_ids = new Array();
@@ -178,7 +156,7 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 	var lons = new Array();
 	
 	var route = {};
-	route['title'] = "abc";
+//	route['title'] = "abc";
 	route['waypoints'] = [];
 	
 	for (var i=0; i < via_photos_ids.length; i++) {
@@ -217,7 +195,7 @@ function gm_display_route (id_place_pairs, sNId, sNName) {
 	for (var j = 0; j < via_photos_ids.length; j++) {
 		via_photos_ids[j] = sNName + ":photo:" + via_photos_ids[j];
 	}
-	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids);
+	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids, timestamp);
 	
 	var markerBounds = new google.maps.LatLngBounds();
 	for (var j = 0; j < waypoints.length; j++) {
@@ -340,8 +318,7 @@ function modifyJson () {
 	});
 }
 
-function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds) {
-
+function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp) {
 	var wpNumber = 0;
 	if (rStart || rEnd) {
 		wpNumber = waypoints.length + 1;
@@ -349,14 +326,15 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds) {
 		wpNumber = waypoints.length - 1;
 	}
 	if (i < wpNumber) {
-		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds);
+		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp);
 		setTimeout(tempfunction, pause_time);
 	}
 }
 
 var overlays = new Array();
 
-function temp (i, waypoints, rStart, rEnd, itemIds) {
+
+function temp (i, waypoints, rStart, rEnd, itemIds, timestamp) {
 	return function () {
 		var start_place_string;
 		var end_place_string;
@@ -405,36 +383,23 @@ function temp (i, waypoints, rStart, rEnd, itemIds) {
 			if (status == google.maps.DirectionsStatus.OK) {
 				directionsDisplay.setDirections(result);
 				directionsDisplay.setOptions({ preserveViewport: true });
-				gm_displayItems(i, waypoints, itemIds);
+				gm_displayItems(i, waypoints, itemIds, timestamp);
 				i++;
-				temp2(i, waypoints, 0, rStart, rEnd, itemIds);
-//				var myRoute = result.routes[0].legs[0];// 9 legs in total for 8 waypoints
-//				var numberOfWaypoints = result.routes[0].legs.length - 1;
-//				console.log("Number of waypoints:" + numberOfWaypoints);
-//				for (var i = 0; i < numberOfWaypoints; i++) {
-//					var leg = result.routes[0].legs[i];
-//					var marker = new google.maps.Marker({
-//						position: leg.end_location,
-//						map: map
-//					});
-//					// TODO get photos
-////					attachInstructionText(marker, myRoute.steps[i].instructions);
-//					var imageTag = getImageTag(via_photos_ids[i], attachInstructionText, marker);// pass function as callback
-////					attachInstructionText(marker, imageTag);
-//					markerArray[i] = marker;
-//				}
+				var key = timestamp+";"+i;
+				routes[key] = directionsDisplay;
+				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp);
 			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
 				i++;
-				temp2(i, waypoints, 0, rStart, rEnd, itemIds);
+				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp);
 			} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-				temp2(i, waypoints, 500, rStart, rEnd, itemIds);// TODO 500 can be optimized. if too small, useful query will run only every second. 
+				temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 			}
 		});
 	}
 	
 }
 
-function gm_displayItems (index, waypoints, itemIds) {
+function gm_displayItems (index, waypoints, itemIds, timestamp) {
 	var curr_wp = waypoints[index];
 	var curr_item = itemIds[index];
 	
@@ -443,16 +408,22 @@ function gm_displayItems (index, waypoints, itemIds) {
 	var curr_itemId = curr_item.split(":")[2];
 	if (curr_itemApi === "Facebook") {
 		if (curr_itemType === "photo") {
-			fb_getImageUrl(curr_itemId, gm_displayItems_callback, waypoints[index])
+			var markerImage = "default";
+			if (index === waypoints.length - 2 ) { // display the last item on the route
+				gm_displayItems (index + 1, waypoints, itemIds, timestamp);
+			} else if (index === 0) {
+				markerImage = "start";
+			} else if (index === waypoints.length - 1) {
+				markerImage = "end";
+			}
+			fb_getImageUrl(curr_itemId, gm_displayItems_callback, waypoints[index], markerImage, timestamp);
 		}
 	}
 	
-	if (index === waypoints.length - 2 ) { // display the last item on the route
-		gm_displayItems (index + 1, waypoints, itemIds)
-	}
+	
 }
 
-function gm_displayItems_callback (itemId, url, height, width, type, wp) {
+function gm_displayItems_callback (itemId, url, height, width, type, wp, markerImage, timestamp) {
 	// infowindow:
 //	var contentString = $('<img />').attr('src', url).data('api', type).data('photoId', itemId).attr('height', height).attr('width', width);
 	var contentString = '<div style="width: ' + width + 'px; height:' +height + 'px;"><img src="' + url + '"' + ' data-api="' + type + '"' + ' data-photoId="' + itemId + '"' +'></div>';
@@ -461,13 +432,25 @@ function gm_displayItems_callback (itemId, url, height, width, type, wp) {
 	    maxWidth: 1000
 	});
 
+	var markerIcon = 'static/marker_blue.png';
+	if (markerImage === "start") {
+		markerIcon = 'static/marker_start.png';
+	} else if (markerImage === "end") {
+		markerIcon = 'static/marker_end.png';
+	} else {
+		
+	}
 	// marker
 	var myLatlng = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
 	var marker = new google.maps.Marker({
 		position: myLatlng,
 		map: map,
+		icon: markerIcon
 	});
 
+	var key = timestamp + ";marker:" + itemId;
+	routes[key] = marker;
+	
 	google.maps.event.addListener(marker, 'click', function() {
 		infowindow.open(map,marker);
 	});
@@ -484,7 +467,7 @@ function gm_displayAllRoute (sNId, sNName) {
 		} else {
 			for (var i = 0; i < numberOfRoutes; i++) {
 				var route = routes[i];
-				var rTitle = route.titlel
+				var rTitle = route.title;
 				var rId = route.id;
 				var rWaypoints = route.waypoints;
 				var itemIds = new Array();
@@ -498,13 +481,16 @@ function gm_displayAllRoute (sNId, sNName) {
 					via_places[wp.id] = wp.place;
 					itemIds.push(wp.api + ":" + wp.type + ":" + wp.id);
 				}
-				gm_displayRoute (via_places, rStart, rEnd, itemIds)
+//				gm_displayRoute (via_places, rStart, rEnd, itemIds, timestamps[i]);
+				gm_displayRoute (via_places, rStart, rEnd, itemIds, sNId + ":" + sNName + ":" + rId);
 			}
 		}
 	});
 }
 
-function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds) {
+var timestampAndRoute = new Array(); // timestamp, route set number.
+var routes = new Array();
+function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds, stamp) {
 	var via_photos_ids = new Array();
 	var via_places = new Array();
 	for (var key in id_place_pairs) {
@@ -517,7 +503,7 @@ function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds) {
 	infoWindow = new google.maps.InfoWindow();
 	var i = 0;
 	
-	temp2(i, waypoints, 0, rStart, rEnd, itemIds);
+	temp2(i, waypoints, 0, rStart, rEnd, itemIds, stamp);
 }
 
 function attachInstructionText(marker, text) {
@@ -549,4 +535,13 @@ function gm_convert_waypoints (via_places) {
 //	"longitude": 1.3329200119598
 //}
 //}
+
+
+function gm_removeRoute (stamp) {// stamp example: 100004981873901:Facebook:0 snId:snName:routeId
+	for (var key in routes) {
+		if (stamp === key.split(';')[0]) {
+			routes[key].setMap(null);
+		}
+	}
+}
 

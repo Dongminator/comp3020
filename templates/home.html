@@ -2,7 +2,6 @@
 
 {% block head %}
 <link rel="stylesheet" type="text/css" href="static/css/home.css">
-<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css">
 {% endblock %}
 
 {% block title %}Home{% endblock %}
@@ -10,10 +9,8 @@
 
 {% block scripts_in_head %}
 <!-- jQuery library -->
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 
 <!-- jQuery UI library -->
-<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js"></script>
 
 <script src="static/main.js"></script>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCHOO41I21tKSMCzpoXI0Aizz39epDs2g&libraries=visualization,places&sensor=true"></script>
@@ -43,19 +40,19 @@
 	<ul>
     	<li><a href="#feed">Feed</a></li>
     	<li><a href="#friend_div">Friends</a></li>
+    	<li id="meTab"><a href="#me">My Routes</a></li>
   	</ul>
 	<div id="feed">
-		<p>This is home page</p>
-	
-		<!-- Information required: start time, start location, via points. -->
-		<button onclick="choosePhotoOption()">Create Route</button>
-	
-		<!-- From googlamap.js -->
-		<button onclick="addHeatmapLayer()">heat map</button>
-
+		<button onclick="deletePoints()">Remove points</button>
+		
+		<ul>This is home page</ul>
 	</div>
 
 	<div id="friend_div"></div>
+	<div id="me">
+		<!-- Information required: start time, start location, via points. -->
+		<button onclick="choosePhotoOption()">Create Route</button>
+	</div>
 </div>
 
 

@@ -10,6 +10,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from compiler.ast import IfExp
 from symbol import if_stmt
 import unicodedata
+from google.appengine.api.validation import Type
 
 
 jinja_environment = jinja2.Environment(
@@ -147,9 +148,21 @@ class Bound(webapp2.RequestHandler):
     def post(self):
         lonLeft = self.request.get('lonLeft') # small
         lonRight = self.request.get('lonRight') # large
-        
         latTop = self.request.get('latTop') # large
         latBot = self.request.get('latBot') # small
+        friendList = self.request.get('friendList')
+        friendList = json.loads(friendList)
+        
+        users = []
+        for friendId in friendList:
+            
+            sNMap = db.GqlQuery("SELECT * FROM SNMap WHERE snId = :1 AND snName = :2", friendId, 'Facebook')
+            if sNMap.count():
+                for sNEntry in sNMap:
+                    user = sNEntry.user
+                    if user not in users:
+                        users.append(user)
+                
         points = db.GqlQuery("SELECT * FROM Point WHERE long > :1 AND long < :2", float(lonLeft), float(lonRight))
         latLon = []
         if points.count():
@@ -157,13 +170,28 @@ class Bound(webapp2.RequestHandler):
                 lat = p.lat
                 lon = p.long
                 if lat > float(latBot) and lat < float(latTop):
-                    latLon.append(str(lat) + ":" + str(lon))
-        self.response.out.write(latLon)   
+                    if p.user in users:
+                        latLon.append(str(lat) + ":" + str(lon))
 
+
+class Delete(webapp2.RequestHandler):
+    def post(self):
+        option = self.request.get('option') # small
+        
+        if option == 'allPoints':
+            points = db.GqlQuery("SELECT * FROM Point")
+            
+        if points.count():
+            for p in points:
+                p.delete()
+                
+        
+        
 app = WSGIApplication(
                       [('/', MainPage), 
                        ('/home', HomePage),
                        ('/login', MainPage),
                        ('/store', Store),
                        ('/allRoute', Route),
-                       ('/bound', Bound)], debug=True)
+                       ('/bound', Bound),
+                       ('/delete', Delete)], debug=True)
