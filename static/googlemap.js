@@ -171,19 +171,13 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 	}
 	
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
-		console.log('====gm_display_route==data===========');
-//		console.log(data);
-		console.log('====end=gm_display_route==data=======');
 		var result = JSON.parse(data);
-		route['id'] = result.length;
+		route['id'] = timestamp;
 		
 		// This is adding route.
 		result.push(route);
 		
 		$.post('/store', { postOption : "route", sNId: sNId, sNName : sNName, start_place : "sa", end_place : "ea", route : JSON.stringify(result), itemIds:JSON.stringify(via_photos_ids), lats:JSON.stringify(lats), lons:JSON.stringify(lons) } , function(data) {
-			console.log('=====store=data===========');
-			console.log(data);
-			console.log('==end=store=data========');
 		});
 	});
 	
@@ -195,7 +189,8 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 	for (var j = 0; j < via_photos_ids.length; j++) {
 		via_photos_ids[j] = sNName + ":photo:" + via_photos_ids[j];
 	}
-	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids, timestamp);
+	var key = sNId + ":" + sNName + ":" + timestamp;
+	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids, key, "create");
 	
 	var markerBounds = new google.maps.LatLngBounds();
 	for (var j = 0; j < waypoints.length; j++) {
@@ -318,7 +313,8 @@ function modifyJson () {
 	});
 }
 
-function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp) {
+// RouteType: create, or display
+function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, routeType) {
 	var wpNumber = 0;
 	if (rStart || rEnd) {
 		wpNumber = waypoints.length + 1;
@@ -326,7 +322,7 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp) {
 		wpNumber = waypoints.length - 1;
 	}
 	if (i < wpNumber) {
-		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp);
+		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType);
 		setTimeout(tempfunction, pause_time);
 	}
 }
@@ -334,7 +330,7 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp) {
 var overlays = new Array();
 
 
-function temp (i, waypoints, rStart, rEnd, itemIds, timestamp) {
+function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 	return function () {
 		var start_place_string;
 		var end_place_string;
@@ -379,15 +375,30 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp) {
 		
 		
 		directionsService.route(request, function(result, status) {
-//			console.log(status);
+			
+			var myRoute = result.routes[0].legs[0];
+			
 			if (status == google.maps.DirectionsStatus.OK) {
-				directionsDisplay.setDirections(result);
-				directionsDisplay.setOptions({ preserveViewport: true });
+
+				var key = timestamp+";"+i;
+				
+				
+				if (routeType === "create") {
+					directionsDisplay.setDirections(result);
+					directionsDisplay.setOptions({ preserveViewport: true });
+					routes[key] = directionsDisplay;
+				} else {
+					var points = new Array();
+					for (var j = 0; j < myRoute.steps.length; j++) {
+		                for (var k = 0; k < myRoute.steps[j].lat_lngs.length; k++) {
+		                    points.push(myRoute.steps[j].lat_lngs[k]);
+		                }
+		            }
+					routes[key] = drawRoute(points);
+				}
 				gm_displayItems(i, waypoints, itemIds, timestamp);
 				i++;
-				var key = timestamp+";"+i;
-				routes[key] = directionsDisplay;
-				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp);
+				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType);
 			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
 				i++;
 				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp);
@@ -397,6 +408,32 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp) {
 		});
 	}
 	
+}
+
+function drawRoute (points) {
+	var routLine = new google.maps.Polyline(
+			{
+				path: points,
+				strokeColor: "Red",
+				strokeOpacity: 0.5,
+				strokeWeight: 5,
+				editable: true
+			}
+	);
+	routLine.setMap(map);
+
+	// Add a listener for the rightclick event on the routLine
+	google.maps.event.addListener(routLine, 'mouseover', function(){
+		routLine.setOptions({
+			strokeWeight: 10
+		});
+	});
+	google.maps.event.addListener(routLine, 'mouseout', function(){
+		routLine.setOptions({
+			strokeWeight: 5
+		});
+	});
+	return routLine;
 }
 
 function gm_displayItems (index, waypoints, itemIds, timestamp) {
@@ -441,9 +478,9 @@ function gm_displayItems_callback (itemId, url, height, width, type, wp, markerI
 		
 	}
 	// marker
-	var myLatlng = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
+	var markerLatLong = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
 	var marker = new google.maps.Marker({
-		position: myLatlng,
+		position: markerLatLong,
 		map: map,
 		icon: markerIcon
 	});
@@ -501,7 +538,6 @@ function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds, stamp) {
 		via_photos_ids.push(key);
 		via_places.push(id_place_pairs[key]);
 	}
-	
 	var waypoints = gm_convert_waypoints(via_places); // 40 points -> 41 routes
 	
 	infoWindow = new google.maps.InfoWindow();
@@ -538,7 +574,67 @@ function gm_removeRoute (stamp) {// stamp example: 100004981873901:Facebook:0 sn
 	for (var key in routes) {
 		if (stamp === key.split(';')[0]) {
 			routes[key].setMap(null);
+		} else {
+			console.log('not remove');
 		}
 	}
 }
+
+
+function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
+	if (sPlace) {
+		var markerIcon = 'static/marker_blue.png';
+		var markerLatLong = new google.maps.LatLng( sPlace.location.latitude, sPlace.location.longitude );
+		var marker = new google.maps.Marker({
+			position: markerLatLong,
+			map: map,
+			icon: markerIcon
+		});
+		var contentString;
+		if (sMsg) {
+			contentString = '<div><p data-sNId="' + uId + ' data-api="' + sNName + '"' + ' data-scId="' + sId + '">' + sMsg + '</p></div>';
+		} else {
+			contentString = '<div><p data-sNId="' + uId + ' data-api="' + sNName + '"' + ' data-scId="' + sId + '">Checked in at ' + sPlace.name + '</p></div>';
+		}
+		
+		var infowindow = new google.maps.InfoWindow({
+		    content: contentString,
+		    maxWidth: 1000
+		});
+		
+		var key = uId + ":" + sNName + ":" + rId + ";marker:" + sId;
+		routes[key] = marker;
+		
+		google.maps.event.addListener(marker, 'click', function() {
+			if (curr_infoWindow) {
+				curr_infoWindow.close();
+			}
+			infowindow.open(map,marker);
+			curr_infoWindow = infowindow;
+		});
+	}
+	
+	
+	
+	
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -109,6 +109,18 @@ class Store(webapp2.RequestHandler):
                 self.response.out.write("false")
         elif postOption == "point" :
             self.response.out.write("point")
+        elif postOption == "title" :
+            sNId = self.request.get('sNId')
+            sNName = self.request.get('sNName')
+            route = self.request.get('route')
+            
+            sNMap = db.GqlQuery("SELECT * FROM SNMap WHERE snId = :1 AND snName = :2", sNId, sNName)
+            if sNMap.count():
+                for sNEntry in sNMap:
+                    user = sNEntry.user
+                    
+                    user.route = route
+                    user.put()
         else:
             print 'More'
         

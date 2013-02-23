@@ -263,10 +263,12 @@ function sc_select_dialog (parsedDate) {
 		height: 600,
 		draggable: false,
 		buttons: {
-			Next: function(){
+			Done: function(){
 				$( this ).dialog( "close" ); // Close dialog
 //				console.log(selected_statusCheckin);
 				// TODO next to load status and check-in
+				getSCLocation(editRouteId, curr_status_ids_after_given_date, curr_checkins_ids_after_given_date);
+				addEditRouteNameText();
 			}
 		}
 	});
@@ -278,6 +280,46 @@ function sc_select_dialog (parsedDate) {
 	// Get status & check-ins
 	fb_get_status('/me?fields=statuses', parsedDate);// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
 	fb_get_checkin('/me?fields=checkins', parsedDate);
+}
+
+function addEditRouteNameText () {
+	if ( document.getElementById("my_route_list") ) {
+	} else {
+		var unordered_list = $('<ul></ul>').attr('id', 'my_route_list').attr('class', 'ipList'); // Create a ul tag
+		$('#me').append(unordered_list); // Append ul to the dialog div
+		console.log('not');
+	}
+	var newRouteDefault = "New untitled route";
+	var input = $('<input />').attr('rows', '1').val(newRouteDefault).focus().bind('keyup', function(e) {
+		if(e.keyCode==13){ // Enter pressed
+			input.remove();
+			var li = $('<li/>').attr('data-sNId', sNId).attr('data-api', sNName).attr('data-rId', editRouteId);
+			li.append("<p>" + input.val() + "</p>");
+			$('#me ul').prepend(li);
+			// TODO store route title
+			$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
+				
+				var result = JSON.parse(data);
+				for (var i = 0; i < result.length; i++){
+					if (result[i].id === editRouteId){ 
+						result[i].title = input.val();
+						break;
+					}
+				}
+				$.post('/store', { postOption : "title", sNId: sNId, sNName : sNName, route : JSON.stringify(result) } , function(data) {
+				});
+			});
+			
+		}
+	}).click(function () {
+		if (input.val() === newRouteDefault) {
+			input.val("");	
+		}
+	});
+	$('#me ul').prepend(input);
+	$('#youHaveNoRoute').remove();
+	//TODO onclick of the new route.
+	// TODO edit route on route list
 }
 
 function fb_get_photos (url, parsedDate) {
@@ -425,6 +467,23 @@ function fb_get_checkin (url, parsedDate) {
 }
 
 
+function getSCLocation (editRouteId, statusIds, checkinIds) {
+	for (var i = 0; i < statusIds.length + checkinIds.length; i++) {
+		var id = statusIds[i];
+		if ( i >= statusIds.length) {
+			id = checkinIds[i - statusIds.length];
+		}
+		FB.api('/' + id, function(response) {
+			var uId = response.from.id
+			var sId = response.id;
+			var sMsg = response.message;
+			var sPlace = response.place;
+			gm_displayStatus(uId, 'Facebook', sId, sPlace, sMsg, editRouteId);
+		});
+	}
+	
+}
+
 var selected_photos = new Array(); // In the select photo dialog, the photos selected by the users. These photos will be shown on route.
 var photo_location_table = {};
 function displayPhotos () {
@@ -515,6 +574,7 @@ function selectAllPhotos (div_name) {
 //	console.log(selected_photos);
 }
 
+var editRouteId;
 function check_photo_location() {
 	var via_places = new Array();
 	for (var i = 0; i < selected_photos.length; i++) {
@@ -522,7 +582,8 @@ function check_photo_location() {
 			via_places[selected_photos[i]] = photo_location_table[selected_photos[i]];
 		}
 	}
-	gm_display_route(via_places, sNId, sNName, new Date().getTime());
+	editRouteId = new Date().getTime() + "";
+	gm_display_route(via_places, sNId, sNName, editRouteId);
 }
 
 function getImageTag(pId, callback, marker) {
@@ -819,7 +880,7 @@ function populateMyRoutes (id, sn) {
 		
 		var numberOfRoutes = routes.length;
 		if (numberOfRoutes === 0) {
-			$('<p></p>').text("You have not created any route.").appendTo('#me');
+			$('<p></p>').attr('id', 'youHaveNoRoute').text("You have not created any route.").appendTo('#me');
 		} else {
 			var unordered_list = $('<ul></ul>').attr('id', 'my_route_list').attr('class', 'ipList'); // Create a ul tag
 			$('#me').append(unordered_list); // Append ul to the dialog div
@@ -845,26 +906,28 @@ function populateMyRoutes (id, sn) {
 				}
 				var li = $('<li/>').attr('data-sNId', id).attr('data-api', sn).attr('data-rId', rId).appendTo(unordered_list);
 				li.append("<p>" + rTitle + "</p>");
-				
-				$('#my_route_list li').click(function() {
-					var selectedRoute = $(this).attr('data-routeId');
-					if (selectedRoutes.indexOf(selectedRoute) !== -1) {
-						var index = selectedRoutes.indexOf(selectedRoute);
-						var stamp = $(this).attr('data-sNId') + ':' + $(this).attr('data-api') + ':' + $(this).attr('data-rId');
-						gm_removeRoute(stamp);
-						selectedRoutes.splice(index, 1);
-						// Unhighlight all the images
-						$(this).removeClass('highlightedRoute');
-					} else {
-						selectedRoutes.push(selectedRoute);
-						// Highlight the newly selected image
-						var stamp = id + ":" + sn + ":" + rId;
-						gm_displayRoute (via_places, rStart, rEnd, itemIds, stamp);
-						$(this).addClass('highlightedRoute');
+
+				$(li).click((function(via_places, rStart, rEnd, itemIds) {
+					return function () {
+						var selectedRoute = $(this).attr('data-rid');
+						if (selectedRoutes.indexOf(selectedRoute) !== -1) {
+							var index = selectedRoutes.indexOf(selectedRoute);
+							var stamp = $(this).attr('data-sNId') + ':' + $(this).attr('data-api') + ':' + $(this).attr('data-rId');
+							gm_removeRoute(stamp);
+							selectedRoutes.splice(index, 1);
+							// Unhighlight all the images
+							$(this).removeClass('highlightedRoute');
+						} else {
+							selectedRoutes.push(selectedRoute);
+							// Highlight the newly selected image
+							var stamp = $(this).attr('data-sNId') + ':' + $(this).attr('data-api') + ':' + $(this).attr('data-rId');
+							gm_displayRoute (via_places, rStart, rEnd, itemIds, stamp);
+							$(this).addClass('highlightedRoute');
+						}
 					}
-				});
+					
+				})(via_places, rStart, rEnd, itemIds));
 			}
 		}
 	});
-	
 }
