@@ -534,8 +534,11 @@ function displayPhotos () {
 		FB.api('/' + photo_id, function(response) {
 			var fb_picture_url = response.picture;
 			var fb_source_url = response.source;
+			var fb_source_height = response.height;
+			var fb_source_width = response.width;
+			
 			var fb_picture_id = response.id;
-			photoIdUrl[fb_picture_id] = fb_source_url;
+			photoIdUrl[fb_picture_id] = fb_source_url + "^" + fb_source_height + "^" + fb_source_width;
 			if (response.place) {
 				photo_location_table[fb_picture_id] = response.place;
 			}
@@ -598,10 +601,11 @@ function check_photo_location() {
  * Allow users to add GPS information to photos without GPS
  */
 function dialog_photos_without_gps () {
+	var dialogWidth = 1200;
 	var dialogDiv = $('<div></div>').attr('id', 'photos_without_gps_dialog').attr('class', 'dialog').attr('title', 'Add loation information to photos');
 	$('body').append(dialogDiv);
 	$("#photos_without_gps_dialog").dialog({ 
-		width: 1200,
+		width: dialogWidth,
 		height: 600,
 		draggable: false,
 		buttons: {
@@ -623,33 +627,45 @@ function dialog_photos_without_gps () {
 			
 		}
 	});
-	console.log(selected_photos);
-	console.log(selected_photos_without_gps);
 	dialogDiv.append($('<p></p>').text("You have " + selected_photos_without_gps.length + " photos without location information. You can add them manually in this section."));
 	
-	var photoTable1 = $('<table><table>').attr('id', 'photos_without_gps_table');
-	$('body').append(photoTable1);
+	var photoTable1 = $('<table><table>').attr('id', 'photos_without_gps_table').appendTo('#photos_without_gps_dialog');
 	var photoTable = document.getElementById("photos_without_gps_table");
-	
-	for (var i = 0; i < selected_photos_without_gps.length; i++) {
-		var url = photoIdUrl[selected_photos_without_gps[i]];
-		
-	}
-	
-	
 	var images_each_row = 4; // TODO This need to be dynamically generated given the width of the window. 
-
 	var row;
 	for (var i = 0; i < selected_photos_without_gps.length; i++) {
 		var photoId = selected_photos_without_gps[i];
-		var photoUrl = photoIdUrl[selected_photos_without_gps[i]];
-
+		var photoInfo = photoIdUrl[selected_photos_without_gps[i]].split('^');
+		var photoUrl = photoInfo[0];
+		var photoHeight = parseInt(photoInfo[1]);
+		var photoWidth = parseInt(photoInfo[2]);
+		
 		// Generate HTML
 		if (i%images_each_row === 0) {
 			row = photoTable.insertRow(-1);// Insert a row at last position
 		}
 		var cell1 = row.insertCell(i%images_each_row);
-		cell1.innerHTML = "<img src='" + photoUrl + "' data-photoId=\"" + photoId + "\">";
+		
+		var imgDisplayW, imgDisplayH;
+		var imgWH = dialogWidth/4 - 15; // if dialogWidth if 1200, imgWH = 285
+		var margin = "";
+		if (photoHeight > photoWidth) {
+			imgDisplayW = imgWH;
+			imgDisplayH = imgDisplayW*photoHeight/photoWidth;
+			margin = (0 - (imgDisplayH - imgDisplayW)/2) + 'px 0px 0px 0px';
+		} else {
+			imgDisplayH = imgWH;
+			imgDisplayW = imgDisplayH*photoWidth/photoHeight;
+			margin = '0px 0px 0px ' + (0 - (imgDisplayW - imgDisplayH)/2) + 'px';
+		}
+		
+		cell1.innerHTML = "<div class='crop'><img src='" + photoUrl + "' " +
+				"data-photoId='" + photoId + "' " +
+				"width='" + imgDisplayW +"' " +
+				"height='" + imgDisplayH + "' " + 
+				"></div>";
+		$('.crop').css('width' , imgWH).css('height', imgWH);
+		$("#photos_without_gps_table").find("[data-photoId='" + photoId + "']").css('margin', margin);
 	}
 	
 }

@@ -19,6 +19,12 @@
     overflow: auto;
 }
 
+.crop {
+	overflow: hidden;
+}
+
+/* Dynamically generated*/
+.crop img {}
 
 
 .dialog {
