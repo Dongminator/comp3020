@@ -77,6 +77,7 @@ var album_ids = new Array();
 
 
 function choosePhotoOption () {
+	// Use photos from Facebook or Upload photos
 	$("#choose-photo-option").dialog({ 
 		width: 350,
 		height: 'auto',
@@ -89,7 +90,7 @@ function choosePhotoOption () {
 	});
 }
 
-function load_photos_from_facebook_dialog () {
+function dialog_load_photos_from_facebook () {
 	$("#choose-photo-option").dialog( "close" ); // Close dialog
 //	load_photos_from_facebook_title();
 	loading_dialog("Loading your albums information...");
@@ -486,6 +487,7 @@ function getSCLocation (editRouteId, statusIds, checkinIds) {
 
 var selected_photos = new Array(); // In the select photo dialog, the photos selected by the users. These photos will be shown on route.
 var photo_location_table = {};
+var photoIdUrl = {};
 function displayPhotos () {
 	$('#loading_dialog').dialog( "close" );
 	$("#facebook_photo_selection_dialog").dialog({ 
@@ -496,7 +498,7 @@ function displayPhotos () {
 			Next: function(){
 				$( this ).dialog( "close" ); // Close dialog
 				check_photo_location();
-				sc_select_dialog(0);
+				dialog_photos_without_gps();
 			}
 		}
 	});
@@ -531,7 +533,9 @@ function displayPhotos () {
 
 		FB.api('/' + photo_id, function(response) {
 			var fb_picture_url = response.picture;
+			var fb_source_url = response.source;
 			var fb_picture_id = response.id;
+			photoIdUrl[fb_picture_id] = fb_source_url;
 			if (response.place) {
 				photo_location_table[fb_picture_id] = response.place;
 			}
@@ -575,15 +579,79 @@ function selectAllPhotos (div_name) {
 }
 
 var editRouteId;
+var selected_photos_without_gps = new Array();
 function check_photo_location() {
 	var via_places = new Array();
 	for (var i = 0; i < selected_photos.length; i++) {
 		if ( photo_location_table[selected_photos[i]] ) {
 			via_places[selected_photos[i]] = photo_location_table[selected_photos[i]];
+		} else {
+			selected_photos_without_gps.push(selected_photos[i]);
 		}
 	}
+	console.log(selected_photos_without_gps);
 	editRouteId = new Date().getTime() + "";
 	gm_display_route(via_places, sNId, sNName, editRouteId);
+}
+
+/*
+ * Allow users to add GPS information to photos without GPS
+ */
+function dialog_photos_without_gps () {
+	var dialogDiv = $('<div></div>').attr('id', 'photos_without_gps_dialog').attr('class', 'dialog').attr('title', 'Add loation information to photos');
+	$('body').append(dialogDiv);
+	$("#photos_without_gps_dialog").dialog({ 
+		width: 1200,
+		height: 600,
+		draggable: false,
+		buttons: {
+			Next: function () {
+				$( this ).dialog( "close" ); // Close dialog
+				// TODO Do something
+				/*
+				 * Display number of photos without GPS
+				 * Use google place auto complate
+				 * insert photos into via_places array at right index
+				 * redraw the route.
+				 */
+				sc_select_dialog(0);
+			},
+			Skip: function () {
+				$( this ).dialog( "close" ); // Close dialog
+				sc_select_dialog(0);
+			}
+			
+		}
+	});
+	console.log(selected_photos);
+	console.log(selected_photos_without_gps);
+	dialogDiv.append($('<p></p>').text("You have " + selected_photos_without_gps.length + " photos without location information. You can add them manually in this section."));
+	
+	var photoTable1 = $('<table><table>').attr('id', 'photos_without_gps_table');
+	$('body').append(photoTable1);
+	var photoTable = document.getElementById("photos_without_gps_table");
+	
+	for (var i = 0; i < selected_photos_without_gps.length; i++) {
+		var url = photoIdUrl[selected_photos_without_gps[i]];
+		
+	}
+	
+	
+	var images_each_row = 4; // TODO This need to be dynamically generated given the width of the window. 
+
+	var row;
+	for (var i = 0; i < selected_photos_without_gps.length; i++) {
+		var photoId = selected_photos_without_gps[i];
+		var photoUrl = photoIdUrl[selected_photos_without_gps[i]];
+
+		// Generate HTML
+		if (i%images_each_row === 0) {
+			row = photoTable.insertRow(-1);// Insert a row at last position
+		}
+		var cell1 = row.insertCell(i%images_each_row);
+		cell1.innerHTML = "<img src='" + photoUrl + "' data-photoId=\"" + photoId + "\">";
+	}
+	
 }
 
 function getImageTag(pId, callback, marker) {
@@ -749,11 +817,7 @@ function edit_via_points () {
 		draggable: true,
 		buttons: {
 			Next: function(){
-
-
-
 				$( this ).dialog( "close" ); // Close dialog
-
 			}
 		}
 	});
@@ -882,7 +946,15 @@ function populateMyRoutes (id, sn) {
 		if (numberOfRoutes === 0) {
 			$('<p></p>').attr('id', 'youHaveNoRoute').text("You have not created any route.").appendTo('#me');
 		} else {
-			var unordered_list = $('<ul></ul>').attr('id', 'my_route_list').attr('class', 'ipList'); // Create a ul tag
+			var heightOfDiv = $('#tabs').height();
+			var heightOfButton = 36;
+			var heightOfScroll = heightOfDiv - heightOfButton - 100;
+			var unordered_list = $('<ul></ul>').attr('id', 'my_route_list').attr('class', 'ipList tabDiv').css('height', heightOfScroll); // Create a ul tag
+			$(window).resize(function() {
+				heightOfDiv = $('#tabs').height();
+				heightOfScroll = heightOfDiv - heightOfButton - 100;
+				unordered_list.css('height', heightOfScroll)
+			});
 			$('#me').append(unordered_list); // Append ul to the dialog div
 			for (var i = 0; i < numberOfRoutes; i++) {
 				var route = routes[i];
@@ -931,3 +1003,4 @@ function populateMyRoutes (id, sn) {
 		}
 	});
 }
+

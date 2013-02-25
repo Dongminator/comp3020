@@ -15,6 +15,10 @@
 	height: 80%;
 }
 
+.tabDiv {
+    overflow: auto;
+}
+
 
 
 .dialog {
