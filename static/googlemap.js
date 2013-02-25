@@ -97,25 +97,12 @@ var start_place = null;
 var end_place = null;
 var via_points = new Array();
 
-function gm_place_autocomplete () {
-	var start_input = document.getElementById('start_input');
-	autocomplete1 = new google.maps.places.Autocomplete(start_input);
-	
-	
-	var end_input = document.getElementById('end_input');
-	autocomplete2 = new google.maps.places.Autocomplete(end_input);
-	addAutocompleteListener(autocomplete2, 1);
-	
-	
-	addAutocompleteListener(autocomplete1, 0);
-}
-
-function gm_addAutoComplete (viaPointNumber) {
-	var via = document.getElementById('via' + viaPointNumber + "_input");
-//	console.log(via);
-	viaPoint_autocomplete = new google.maps.places.Autocomplete(via);
-	
-	addAutocompleteListener(viaPoint_autocomplete, 2);
+function gm_place_autocomplete (id) {
+	console.log(id);
+	var input = document.getElementById(id);
+	console.log(input);
+	autocomplete = new google.maps.places.Autocomplete(input);
+	addAutocompleteListener(autocomplete, 0);
 }
 
 function addAutocompleteListener (autocomplete, option) {

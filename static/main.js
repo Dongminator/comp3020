@@ -663,7 +663,15 @@ function dialog_photos_without_gps () {
 				"data-photoId='" + photoId + "' " +
 				"width='" + imgDisplayW +"' " +
 				"height='" + imgDisplayH + "' " + 
-				"></div>";
+				"></div>" + 
+				"";
+		var inputId = "location_of_" + photoId;
+		var input = $('<input>').attr('type', 'text').attr('name', photoId).attr('id', inputId);
+		cell1.innerHTML = cell1.innerHTML + $('<div>').append(input.clone()).html();
+		gm_place_autocomplete(inputId);
+		
+		// TODO store the locatoin and insert into right index of via points
+		
 		$('.crop').css('width' , imgWH).css('height', imgWH);
 		$("#photos_without_gps_table").find("[data-photoId='" + photoId + "']").css('margin', margin);
 	}
