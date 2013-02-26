@@ -64,8 +64,6 @@ function logout() {
 
 }
 
-var album_ids = new Array();
-
 //Load the SDK Asynchronously
 (function(d){
 	var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
@@ -175,9 +173,7 @@ function getAllAlbumsIds (url, callback) {
 		if (paging && paging.next) {
 			var newUrl = paging.next.substring(26);// 26: https://graph.facebook.com/
 			getAllAlbumsIds (newUrl, callback)
-			console.log(newUrl);
 		} else {
-			console.log(allAlbumIds);
 			callback(allAlbumIds, 0);// album_selection_dialog
 		}
 	});
@@ -518,9 +514,9 @@ function displayPhotos () {
 	// Get number of photos to be displayed. I.E. store IDs of photos.
 	// After that, append photos.
 	if (curr_album_photos_count_after_given_date === curr_album_photos_ids_after_given_date.length) {
-		console.log("number equal");
+//		console.log("number equal");
 	} else {
-		console.log("number !equal");
+//		console.log("number !equal");
 	}
 
 	for (var i = 0; i < curr_album_photos_count_after_given_date; i++) {
@@ -536,8 +532,8 @@ function displayPhotos () {
 			var fb_source_url = response.source;
 			var fb_source_height = response.height;
 			var fb_source_width = response.width;
-			
 			var fb_picture_id = response.id;
+			
 			photoIdUrl[fb_picture_id] = fb_source_url + "^" + fb_source_height + "^" + fb_source_width;
 			if (response.place) {
 				photo_location_table[fb_picture_id] = response.place;
@@ -583,18 +579,22 @@ function selectAllPhotos (div_name) {
 
 var editRouteId;
 var selected_photos_without_gps = new Array();
+var via_places = new Array();
 function check_photo_location() {
-	var via_places = new Array();
 	for (var i = 0; i < selected_photos.length; i++) {
+		var place = "";
 		if ( photo_location_table[selected_photos[i]] ) {
-			via_places[selected_photos[i]] = photo_location_table[selected_photos[i]];
+			place = photo_location_table[selected_photos[i]];
 		} else {
 			selected_photos_without_gps.push(selected_photos[i]);
 		}
+		var obj = {
+				photoId : selected_photos[i],
+				place : place
+		};
+		via_places.push(obj);
 	}
-	console.log(selected_photos_without_gps);
-	editRouteId = new Date().getTime() + "";
-	gm_display_route(via_places, sNId, sNName, editRouteId);
+	console.log(via_places);
 }
 
 /*
@@ -613,15 +613,34 @@ function dialog_photos_without_gps () {
 				$( this ).dialog( "close" ); // Close dialog
 				// TODO Do something
 				/*
-				 * Display number of photos without GPS
-				 * Use google place auto complate
+				 * add listeners
 				 * insert photos into via_places array at right index
 				 * redraw the route.
 				 */
+
+				$('#photos_without_gps_table').find('.highlighted').each(function(){
+					console.log(this);
+					var selected_photo_id = $(this).find('img').attr('data-photoId');
+					var inputId = $(this).find('input').attr('id');
+					var place = gm_getPlaceByInputId(inputId);
+					
+					var obj = {
+							photoId : selected_photo_id, 
+							place : place
+					};
+					// Find index to modify
+					var index = selected_photos.indexOf(selected_photo_id);
+					via_places[index] = obj;
+				});
+				
+				editRouteId = new Date().getTime() + "";
+				gm_display_route(via_places, sNId, sNName, editRouteId);
 				sc_select_dialog(0);
 			},
 			Skip: function () {
 				$( this ).dialog( "close" ); // Close dialog
+				editRouteId = new Date().getTime() + "";
+				gm_display_route(via_places, sNId, sNName, editRouteId);
 				sc_select_dialog(0);
 			}
 			
@@ -670,11 +689,18 @@ function dialog_photos_without_gps () {
 		cell1.innerHTML = cell1.innerHTML + $('<div>').append(input.clone()).html();
 		gm_place_autocomplete(inputId);
 		
-		// TODO store the locatoin and insert into right index of via points
-		
 		$('.crop').css('width' , imgWH).css('height', imgWH);
 		$("#photos_without_gps_table").find("[data-photoId='" + photoId + "']").css('margin', margin);
 	}
+	
+	// Add click listener
+	$('#photos_without_gps_table td').click(function() {
+		if ($(this).hasClass('highlighted')) {
+			$(this).removeClass('highlighted');
+		} else {
+			$(this).addClass('highlighted');
+		}
+	});
 	
 }
 

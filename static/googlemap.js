@@ -95,17 +95,16 @@ function gm_showInfoWindow (latLng) {
 
 var start_place = null;
 var end_place = null;
-var via_points = new Array();
+var inputIdPlace = new Array();
 
-function gm_place_autocomplete (id) {
-	console.log(id);
-	var input = document.getElementById(id);
-	console.log(input);
+function gm_place_autocomplete (inputId) {
+	var input = document.getElementById(inputId);
 	autocomplete = new google.maps.places.Autocomplete(input);
-	addAutocompleteListener(autocomplete, 0);
+	addAutocompleteListener(inputId, autocomplete, 2);
 }
 
-function addAutocompleteListener (autocomplete, option) {
+
+function addAutocompleteListener (inputId, autocomplete, option) {
 	google.maps.event.addListener(autocomplete, 'place_changed', function() {
 		var place = autocomplete.getPlace();
 		if (!place.geometry) {
@@ -118,11 +117,18 @@ function addAutocompleteListener (autocomplete, option) {
 		} else if (option === 1) {
 			end_place = place;
 		} else if (option === 2) {
-			via_points.push = place;
+			gm_setPlaceByInputId (inputId, place);
 		}
 	});
 }
 
+function gm_getPlaceByInputId (inputId) {
+	return inputIdPlace[inputId];
+}
+
+function gm_setPlaceByInputId (inputId, place) {
+	inputIdPlace[inputId] = place;
+}
 
 /*
  * Knowing two points and via points (waypoint), generate the route and display on Google map.
@@ -134,9 +140,13 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 	// via_places: key -> value pairs: photo ID, places of photos with geographical information
 	var via_photos_ids = new Array();
 	var via_places = new Array();
-	for (var key in id_place_pairs) {
-		via_photos_ids.push(key);
-		via_places.push(id_place_pairs[key]);
+	for (var i = 0; i < id_place_pairs.length; i++) {
+		var pId = id_place_pairs[i].photoId;
+		var place = id_place_pairs[i].place;// place could be from Facebook, Google or empty
+		if (place) {
+			via_photos_ids.push(pId);
+			via_places.push(place);
+		}
 	}
 	
 	var lats = new Array();
@@ -153,8 +163,14 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 		route['waypoints'][i]['id'] = via_photos_ids[i];
 		route['waypoints'][i]['place'] = via_places[i];
 
-		lats.push(via_places[i].location.latitude);
-		lons.push(via_places[i].location.longitude);
+		console.log(via_places[i]);
+		if (via_places[i].location) {
+			lats.push(via_places[i].location.latitude);
+			lons.push(via_places[i].location.longitude);
+		} else if (via_places[i].geometry) {
+			lats.push(via_places[i].geometry.location.hb);
+			lons.push(via_places[i].geometry.location.ib);
+		}
 	}
 	
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
@@ -362,14 +378,9 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 		
 		
 		directionsService.route(request, function(result, status) {
-			
-			var myRoute = result.routes[0].legs[0];
-			
 			if (status == google.maps.DirectionsStatus.OK) {
-
+				var myRoute = result.routes[0].legs[0];
 				var key = timestamp+";"+i;
-				
-				
 				if (routeType === "create") {
 					directionsDisplay.setDirections(result);
 					directionsDisplay.setOptions({ preserveViewport: true });
@@ -403,8 +414,8 @@ function drawRoute (points) {
 				path: points,
 				strokeColor: "Red",
 				strokeOpacity: 0.5,
-				strokeWeight: 5,
-				editable: true
+				strokeWeight: 5
+//				editable: true
 			}
 	);
 	routLine.setMap(map);
@@ -538,7 +549,12 @@ function gm_convert_waypoints (via_places) {
 
 	// via_places.length => 8 if has only one route. Maximum of waypoints in one route is 8.
 	for (var i = 0; i < via_places.length; i++) {
-		waypoints.push(via_places[i].location.latitude + ', ' +via_places[i].location.longitude);
+		if (via_places[i].location) {
+			waypoints.push(via_places[i].location.latitude + ', ' +via_places[i].location.longitude);
+		} else if (via_places[i].geometry) {
+			waypoints.push(via_places[i].geometry.location.hb + ', ' +via_places[i].geometry.location.ib);
+		}
+		
 	}
 	return waypoints;
 }
@@ -561,8 +577,9 @@ function gm_removeRoute (stamp) {// stamp example: 100004981873901:Facebook:0 sn
 	for (var key in routes) {
 		if (stamp === key.split(';')[0]) {
 			routes[key].setMap(null);
+			delete routes[key];
 		} else {
-			console.log('not remove');
+			console.log('not remove' + stamp + " " + key);// because other routes exist on map
 		}
 	}
 }

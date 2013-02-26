@@ -1,0 +1,95 @@
+// Facebook place
+{
+    "photoId": "124970711012324",
+    "place": {
+        "id": "100572883398118",
+        "name": "Cathédrale Notre-Dame de Paris",
+        "location": {
+            "street": "6, Parvis Notre-Dame ",
+            "city": "Paris",
+            "state": "",
+            "country": "France",
+            "zip": "75004",
+            "latitude": 48.853205046952,
+            "longitude": 2.3484130703661
+        }
+    }
+}
+
+// Google Place
+{
+    "photoId": "124970717678990",
+    "place": {
+        "address_components": [
+            {
+                "long_name": "Notre Dame",
+                "short_name": "Notre Dame",
+                "types": [
+                    "neighborhood",
+                    "political"
+                ]
+            },
+            {
+                "long_name": "Paris",
+                "short_name": "Paris",
+                "types": [
+                    "locality",
+                    "political"
+                ]
+            },
+            {
+                "long_name": "Paris",
+                "short_name": "75",
+                "types": [
+                    "administrative_area_level_2",
+                    "political"
+                ]
+            },
+            {
+                "long_name": "Île-de-France",
+                "short_name": "IdF",
+                "types": [
+                    "administrative_area_level_1",
+                    "political"
+                ]
+            },
+            {
+                "long_name": "France",
+                "short_name": "FR",
+                "types": [
+                    "country",
+                    "political"
+                ]
+            }
+        ],
+        "adr_address": "Notre Dame, <span class=\"locality\">Paris</span>, <span class=\"country-name\">France</span>",
+        "formatted_address": "Notre Dame, Paris, France",
+        "geometry": {
+            "location": {
+                "hb": 48.8527288,
+                "ib": 2.350563500000021
+            },
+            "viewport": {
+                "Z": {
+                    "b": 48.8480391,
+                    "d": 48.856627
+                },
+                "fa": {
+                    "b": 2.344335000000001,
+                    "d": 2.360994900000037
+                }
+            }
+        },
+        "icon": "http://maps.gstatic.com/mapfiles/place_api/icons/geocode-71.png",
+        "id": "f3f7bfed5d81ee0ad55f6f4252e2a25d2aadef2c",
+        "name": "Notre Dame",
+        "reference": "CoQBeAAAAObyenjFG8OwU3VmXgGZiD9nxxg4YwZFKiwT6cmxsgKUAIncVl1ZFkNrLVLM53mQRhVJbXJS3lyxVDrjWLn881Wjz_hrNQ7ayR8palErFHPjwT649nXZpIWPHYxy9nf5sA7fpYzpQOayd2MSaBcDaZTIj3HHKtT5ldEDgPYCCnuDEhBDjn9fL7PaAFViwH5ACb-GGhQtE_YXdeHMLLR8ufjlDoQIyRZMaA",
+        "types": [
+            "neighborhood",
+            "political"
+        ],
+        "url": "https://maps.google.com/maps/place?q=Notre+Dame&ftid=0x47e671e39dd448af:0xe95d8ec82cfaf643",
+        "vicinity": "Paris",
+        "html_attributions": []
+    }
+}
