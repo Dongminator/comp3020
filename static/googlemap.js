@@ -1,5 +1,10 @@
 
 var map = null;
+
+var routesDisplayed = new Array();// store route ids (i.e. route creation time)
+var routesMarkers = new Array();// routesMarkers[0] => array of markers in route 0. 
+var routesItems = new Array();// store objects (contains route ID, markers)
+
 function initialize() {
 	var mapOptions = {
 			center : new google.maps.LatLng(50, 0),
@@ -136,8 +141,8 @@ function gm_setPlaceByInputId (inputId, place) {
 var infoWindow;
 var markerArray = [];
 function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
-	// via_places: places of photos with geographical information
-	// via_places: key -> value pairs: photo ID, places of photos with geographical information
+	// [vvvvvvv]via_places: places of photos with geographical information
+	// [xxxxxxx]via_places: key -> value pairs: photo ID, places of photos with geographical information
 	var via_photos_ids = new Array();
 	var via_places = new Array();
 	for (var i = 0; i < id_place_pairs.length; i++) {
@@ -434,6 +439,7 @@ function drawRoute (points) {
 	return routLine;
 }
 
+
 function gm_displayItems (index, waypoints, itemIds, timestamp) {
 	var curr_wp = waypoints[index];
 	var curr_item = itemIds[index];
@@ -441,57 +447,105 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 	var curr_itemApi = curr_item.split(":")[0];
 	var curr_itemType = curr_item.split(":")[1];
 	var curr_itemId = curr_item.split(":")[2];
+	
+	var firstItemAtThisLocation;
+	var lastPoint;
+	if (waypoints.indexOf(curr_wp) !== index) {
+		// This location has more than one image
+		firstItemAtThisLocation = itemIds[waypoints.indexOf(curr_wp)];
+		firstItemAtThisLocation = firstItemAtThisLocation.split(':')[2];
+	}
+	
 	if (curr_itemApi === "Facebook") {
 		if (curr_itemType === "photo") {
 			var markerImage = "default";
+			var markerIcon = 'static/marker_blue.png';
 			if (index === waypoints.length - 2 ) { // display the last item on the route
 				gm_displayItems (index + 1, waypoints, itemIds, timestamp);
 			} else if (index === 0) {
 				markerImage = "start";
+				markerIcon = 'static/marker_start.png';
 			} else if (index === waypoints.length - 1) {
 				markerImage = "end";
+				markerIcon = 'static/marker_end.png';
+				lastPoint = true;
 			}
-			fb_getImageUrl(curr_itemId, gm_displayItems_callback, waypoints[index], markerImage, timestamp);
+			
+			// only need FB api to get image url. need to create marker here, not in the callback.
+			// fb callback needs to know where to put the image. 
+			var wp = waypoints[index];
+			var markerLatLong = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
+			var marker;
+			var indexOfDisplayedRoute = routesDisplayed.indexOf(timestamp);
+			var obj = new Object();
+			if (firstItemAtThisLocation) {// firstItemAtThisLocation is the item ID
+				marker = routes[timestamp + ";marker:" + firstItemAtThisLocation];
+				routesItems[ indexOfDisplayedRoute ][ routesMarkers[indexOfDisplayedRoute].indexOf(marker) ].push(obj);
+			} else {
+				marker = new google.maps.Marker({
+					position: markerLatLong,
+					map: map,
+					icon: markerIcon
+				});
+				var key = timestamp + ";marker:" + curr_itemId;
+				routes[key] = marker;
+				routesMarkers[indexOfDisplayedRoute].push(marker);
+				routesItems[ indexOfDisplayedRoute ].push( [obj] );
+			}
+			var indexOfMarker = routesMarkers[indexOfDisplayedRoute].indexOf(marker);
+			var indexOfObj = routesItems[indexOfDisplayedRoute][indexOfMarker].indexOf(obj);
+			fb_getImageUrl(curr_itemId, gm_displayItems_callback, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
 		}
 	}
+}
+function gm_displayItems_callback (itemId, url, type, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint) {
+//function gm_displayItems_callback (itemId, url, height, width, type, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint) {
+	// Put content into routesItems
+	var obj = {
+			href : url
+	};
 	
+	routesItems[indexOfDisplayedRoute][indexOfMarker][indexOfObj] = obj;
 	
+	if (lastPoint) {
+		for (var i = 0; i < routesMarkers[indexOfDisplayedRoute].length; i++) {
+			addListenersToMarkers (routesMarkers[indexOfDisplayedRoute][i], i, indexOfDisplayedRoute, indexOfMarker, indexOfObj);
+		}
+	}
+
+	// infowindow:
+////	var contentString = $('<img />').attr('src', url).data('api', type).data('photoId', itemId).attr('height', height).attr('width', width);
+//	var contentString = '<div style="width: ' + width + 'px; height:' +height + 'px;"><img src="' + url + '"' + ' data-api="' + type + '"' + ' data-photoId="' + itemId + '"' +'></div>';
+////	<a id="fancybox-manual-c" href="javascript:;"><img src="5_s.jpg" alt="" /></a><
+//	var infowindow = new google.maps.InfoWindow({
+//	    content: contentString,
+//	    maxWidth: 1000
+//	});
 }
 
-function gm_displayItems_callback (itemId, url, height, width, type, wp, markerImage, timestamp) {
-	// infowindow:
-//	var contentString = $('<img />').attr('src', url).data('api', type).data('photoId', itemId).attr('height', height).attr('width', width);
-	var contentString = '<div style="width: ' + width + 'px; height:' +height + 'px;"><img src="' + url + '"' + ' data-api="' + type + '"' + ' data-photoId="' + itemId + '"' +'></div>';
-	var infowindow = new google.maps.InfoWindow({
-	    content: contentString,
-	    maxWidth: 1000
-	});
-
-	var markerIcon = 'static/marker_blue.png';
-	if (markerImage === "start") {
-		markerIcon = 'static/marker_start.png';
-	} else if (markerImage === "end") {
-		markerIcon = 'static/marker_end.png';
-	} else {
-		
-	}
-	// marker
-	var markerLatLong = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
-	var marker = new google.maps.Marker({
-		position: markerLatLong,
-		map: map,
-		icon: markerIcon
-	});
-
-	var key = timestamp + ";marker:" + itemId;
-	routes[key] = marker;
-	
-	google.maps.event.addListener(marker, 'click', function() {
+/*
+ * This function is created as a closure. 
+ * See Google Map Events tutorial about 'Using Closure in Event Listeners': https://developers.google.com/maps/documentation/javascript/events#EventClosures
+ */
+function addListenersToMarkers (marker, i, indexOfDisplayedRoute, indexOfMarker, indexOfObj) {
+	google.maps.event.addListener(marker, 'click', function(event) {
+		var objs = new Array();
 		if (curr_infoWindow) {
 			curr_infoWindow.close();
 		}
-		infowindow.open(map,marker);
-		curr_infoWindow = infowindow;
+//		infowindow.open(map,marker);
+//		curr_infoWindow = infowindow;
+		for (var j = 0; j < routesItems[indexOfDisplayedRoute][i].length; j ++ ) {
+			objs.push(routesItems[indexOfDisplayedRoute][i][j]);
+		}
+		$.fancybox.open(objs, {
+			helpers : {
+				thumbs : {
+					width: 75,
+					height: 50
+				}
+			}
+		});
 	});
 }
 
@@ -527,9 +581,12 @@ function gm_displayAllRoute (sNId, sNName) {
 	});
 }
 
-var timestampAndRoute = new Array(); // timestamp, route set number.
 var routes = new Array();
 function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds, stamp) {
+	routesDisplayed.push(stamp);
+	routesItems.push(new Array());// store objects
+	routesMarkers.push(new Array());// store google map markers 
+	
 	var via_photos_ids = new Array();
 	var via_places = new Array();
 	for (var key in id_place_pairs) {
@@ -546,31 +603,15 @@ function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds, stamp) {
 
 function gm_convert_waypoints (via_places) {
 	var waypoints = [];
-
-	// via_places.length => 8 if has only one route. Maximum of waypoints in one route is 8.
 	for (var i = 0; i < via_places.length; i++) {
 		if (via_places[i].location) {
 			waypoints.push(via_places[i].location.latitude + ', ' +via_places[i].location.longitude);
 		} else if (via_places[i].geometry) {
 			waypoints.push(via_places[i].geometry.location.hb + ', ' +via_places[i].geometry.location.ib);
 		}
-		
 	}
 	return waypoints;
 }
-//"place": {
-//"id": "149203025119254", 
-//"name": "Dover Ferry Port", 
-//"location": {
-//	"street": "Glasdon Unit East Camber Eastern Dock, Dover, Kent", 
-//	"city": "Dover", 
-//	"state": "", 
-//	"country": "United Kingdom", 
-//	"zip": "CT16 1JA", 
-//	"latitude": 51.126521704244, 
-//	"longitude": 1.3329200119598
-//}
-//}
 
 
 function gm_removeRoute (stamp) {// stamp example: 100004981873901:Facebook:0 snId:snName:routeId

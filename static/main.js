@@ -882,14 +882,15 @@ function edit_via_points () {
 }
 
 
-function fb_getImageUrl (itemId, gm_callback, wp, markerImage, timestamp) {
+function fb_getImageUrl (itemId, gm_callback, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint) {
 	FB.api('/' + itemId, function(response) {
-		var image = response.images[5];// TODO determine the size of the photo
-		var url = image.source;
-		var height = image.height;
-		var width = image.width;
-		
-		gm_callback(itemId, url, height, width, "Facebook", wp, markerImage, timestamp);
+//		var image = response.images[5];// TODO determine the size of the photo
+//		var url = image.source;
+//		var height = image.height;
+//		var width = image.width;
+		var url = response.source;
+//		gm_callback(itemId, url, height, width, "Facebook", indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
+		gm_callback(itemId, url, "Facebook", indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
 	});
 	
 }
