@@ -198,6 +198,7 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 		via_photos_ids[j] = sNName + ":photo:" + via_photos_ids[j];
 	}
 	var key = sNId + ":" + sNName + ":" + timestamp;
+	routesDisplayed.push(key);
 	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids, key, "create");
 	
 	var markerBounds = new google.maps.LatLngBounds();
@@ -458,19 +459,14 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 	
 	if (curr_itemApi === "Facebook") {
 		if (curr_itemType === "photo") {
-			var markerImage = "default";
 			var markerIcon = 'static/marker_blue.png';
-			if (index === waypoints.length - 2 ) { // display the last item on the route
-				gm_displayItems (index + 1, waypoints, itemIds, timestamp);
-			} else if (index === 0) {
-				markerImage = "start";
+			if (index === 0) {
 				markerIcon = 'static/marker_start.png';
 			} else if (index === waypoints.length - 1) {
-				markerImage = "end";
 				markerIcon = 'static/marker_end.png';
 				lastPoint = true;
 			}
-			
+
 			// only need FB api to get image url. need to create marker here, not in the callback.
 			// fb callback needs to know where to put the image. 
 			var wp = waypoints[index];
@@ -481,6 +477,11 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 			if (firstItemAtThisLocation) {// firstItemAtThisLocation is the item ID
 				marker = routes[timestamp + ";marker:" + firstItemAtThisLocation];
 				routesItems[ indexOfDisplayedRoute ][ routesMarkers[indexOfDisplayedRoute].indexOf(marker) ].push(obj);
+				
+				if (lastPoint) {
+					// substitute last marker to end marker.
+				}
+				
 			} else {
 				marker = new google.maps.Marker({
 					position: markerLatLong,
@@ -492,6 +493,12 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 				routesMarkers[indexOfDisplayedRoute].push(marker);
 				routesItems[ indexOfDisplayedRoute ].push( [obj] );
 			}
+
+			// display the last item on the route
+			if (index === waypoints.length - 2 ) { 
+				gm_displayItems (index + 1, waypoints, itemIds, timestamp);
+			}
+			
 			var indexOfMarker = routesMarkers[indexOfDisplayedRoute].indexOf(marker);
 			var indexOfObj = routesItems[indexOfDisplayedRoute][indexOfMarker].indexOf(obj);
 			fb_getImageUrl(curr_itemId, gm_displayItems_callback, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
