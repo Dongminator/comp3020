@@ -977,7 +977,7 @@ function populateMyRoutes (id, sn) {
 			var timestamps = new Array();
 			$('#my_route_list li').each(function( index ) {
 				$(this).addClass('highlightedRoute');
-				selectedRoutes.push($(this).attr('data-routeId'));
+				selectedRoutes.push($(this).attr('data-rId'));
 				
 				var timestamp = new Date().getTime();
 				while (timestamps.indexOf(timestamp) !== -1) {
