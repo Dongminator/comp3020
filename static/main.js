@@ -594,7 +594,6 @@ function check_photo_location() {
 		};
 		via_places.push(obj);
 	}
-	console.log(via_places);
 }
 
 /*
@@ -619,18 +618,18 @@ function dialog_photos_without_gps () {
 				 */
 
 				$('#photos_without_gps_table').find('.highlighted').each(function(){
-					console.log(this);
 					var selected_photo_id = $(this).find('img').attr('data-photoId');
 					var inputId = $(this).find('input').attr('id');
 					var place = gm_getPlaceByInputId(inputId);
-					
-					var obj = {
-							photoId : selected_photo_id, 
-							place : place
-					};
-					// Find index to modify
-					var index = selected_photos.indexOf(selected_photo_id);
-					via_places[index] = obj;
+					if (place) {
+						var obj = {
+								photoId : selected_photo_id, 
+								place : place
+						};
+						// Find index to modify
+						var index = selected_photos.indexOf(selected_photo_id);
+						via_places[index] = obj;
+					}
 				});
 				
 				editRouteId = new Date().getTime() + "";
@@ -666,7 +665,7 @@ function dialog_photos_without_gps () {
 		var cell1 = row.insertCell(i%images_each_row);
 		
 		var imgDisplayW, imgDisplayH;
-		var imgWH = dialogWidth/4 - 15; // if dialogWidth if 1200, imgWH = 285
+		var imgWH = dialogWidth/4 - 20; // if dialogWidth if 1200, imgWH = 285
 		var margin = "";
 		if (photoHeight > photoWidth) {
 			imgDisplayW = imgWH;
@@ -717,12 +716,6 @@ function getImageTag(pId, callback, marker) {
 var selected_statusCheckin = new Array();
 var id_time = new Array();
 function displayStatusCheckin (count, ids, service) {
-	if (count === ids.length) {
-		console.log("number equal:" + count);
-	} else {
-		console.log("number !equal");
-	}
-
 	// Put status on HTML
 	for (var i = 0; i < count; i++) {
 		var id = ids[i]; // e.g. dongminator fb status ID 125260037650058

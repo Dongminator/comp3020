@@ -177,7 +177,6 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 		route['waypoints'][i]['id'] = via_photos_ids[i];
 		route['waypoints'][i]['place'] = via_places[i];
 
-		console.log(via_places[i]);
 		if (via_places[i].location) {
 			lats.push(via_places[i].location.latitude);
 			lons.push(via_places[i].location.longitude);
@@ -209,6 +208,9 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 	}
 	var key = sNId + ":" + sNName + ":" + timestamp;
 	routesDisplayed.push(key);
+	routesItems.push(new Array());// store objects
+	routesMarkers.push(new Array());// store google map markers 
+	
 	temp2(i, waypoints, 0, start_place, end_place, via_photos_ids, key, "create");
 	
 	var markerBounds = new google.maps.LatLngBounds();
