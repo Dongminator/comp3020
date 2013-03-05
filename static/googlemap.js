@@ -183,17 +183,8 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 			lons.push(via_places[i].location.longitude);
 		} else if (via_places[i].geometry) {
 			var gp_location = via_places[i].geometry.location;
-			var lat, lon, j = 0;
-			for (var key in gp_location) {
-				if (j === 0) {
-					lat = gp_location[key];
-					j++;
-				} else {
-					lon = gp_location[key];
-				}
-			}
-			lats.push(lat);
-			lons.push(lon);
+			lats.push(gp_location[Object.keys(gp_location)[0]]);
+			lons.push(gp_location[Object.keys(gp_location)[1]]);
 		}
 	}
 	
@@ -654,15 +645,6 @@ function gm_convert_waypoints (via_places) {
 			waypoints.push(via_places[i].location.latitude + ', ' +via_places[i].location.longitude);
 		} else if (via_places[i].geometry) {
 			var gp_location = via_places[i].geometry.location;
-//			var lat, lon, j = 0;
-//			for (var latLon in gp_location) {
-//				if (j === 0) {
-//					lat = gp_location[latLon];
-//					j++;
-//				} else {
-//					lon = gp_location[latLon];
-//				}
-//			}
 			waypoints.push(gp_location[Object.keys(gp_location)[0]] + ', ' + gp_location[Object.keys(gp_location)[1]]);
 		}
 	}
