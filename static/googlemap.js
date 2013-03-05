@@ -398,7 +398,8 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 		                    points.push(myRoute.steps[j].lat_lngs[k]);
 		                }
 		            }
-					routes[key] = drawRoute(points);
+					var color = gm_createColor (i, waypoints.length);
+					routes[key] = drawRoute(points, color);
 				}
 				gm_displayItems(i, waypoints, itemIds, timestamp);
 				i++;
@@ -414,11 +415,31 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 	
 }
 
-function drawRoute (points) {
+function gm_createColor (index, length) {//color start from Green #00FF00 rgb(0,255,0) -> Yellow #FFFF00 rgb(255,255,0) -> Red #FF0000 rgb(255,0,0)
+	var color = "";
+	var r, g, b = '0';
+	
+	if (index < length/2) {
+		r = Math.round(255*index*2/length);
+		g = '255';
+		color = 'rgb(' + r + ',' + g + ',' + b + ')';
+	} else if (index === length/2) {
+		color = 'rgb(255,255,0)';
+	} else {
+		r = '255';
+		g = Math.round(255 - 255*(2*index - length)/length);
+		color = 'rgb(' + r + ',' + g + ',' + b + ')';
+	}
+	console.log(color);
+	
+	return color;
+}
+
+function drawRoute (points, color) {
 	var routLine = new google.maps.Polyline(
 			{
 				path: points,
-				strokeColor: "Red",
+				strokeColor: color,
 				strokeOpacity: 0.5,
 				strokeWeight: 5
 //				editable: true
@@ -666,10 +687,6 @@ function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
 			curr_infoWindow = infowindow;
 		});
 	}
-	
-	
-	
-	
 	
 }
 
