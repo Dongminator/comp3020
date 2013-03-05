@@ -6,9 +6,18 @@ var routesMarkers = new Array();// routesMarkers[0] => array of markers in route
 var routesItems = new Array();// store objects (contains route ID, markers)
 
 function initialize() {
+	var stylesArray = [{
+		featureType: 'road',
+		stylers: [{
+			weight: '0.5',
+			visibility: 'simplified'
+		}]
+	}];
+	
 	var mapOptions = {
 			center : new google.maps.LatLng(50, 0),
 			zoom : 4,
+			styles: stylesArray,
 			mapTypeId : google.maps.MapTypeId.ROADMAP,
 			mapTypeControl: true,
 			mapTypeControlOptions: {
