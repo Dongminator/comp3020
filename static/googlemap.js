@@ -505,11 +505,12 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 		}
 	}
 }
-function gm_displayItems_callback (itemId, url, type, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint) {
+function gm_displayItems_callback (itemId, url, description, type, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint) {
 //function gm_displayItems_callback (itemId, url, height, width, type, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint) {
 	// Put content into routesItems
 	var obj = {
-			href : url
+			href : url,
+			title : description || ""
 	};
 	
 	routesItems[indexOfDisplayedRoute][indexOfMarker][indexOfObj] = obj;

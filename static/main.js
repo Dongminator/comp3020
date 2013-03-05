@@ -888,9 +888,10 @@ function fb_getImageUrl (itemId, gm_callback, indexOfDisplayedRoute, indexOfMark
 //		var url = image.source;
 //		var height = image.height;
 //		var width = image.width;
+		var description = response.name;
 		var url = response.source;
 //		gm_callback(itemId, url, height, width, "Facebook", indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
-		gm_callback(itemId, url, "Facebook", indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
+		gm_callback(itemId, url, description, "Facebook", indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
 	});
 	
 }
