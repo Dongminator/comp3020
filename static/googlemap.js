@@ -654,16 +654,16 @@ function gm_convert_waypoints (via_places) {
 			waypoints.push(via_places[i].location.latitude + ', ' +via_places[i].location.longitude);
 		} else if (via_places[i].geometry) {
 			var gp_location = via_places[i].geometry.location;
-			var lat, lon, j = 0;
-			for (var latLon in gp_location) {
-				if (j === 0) {
-					lat = gp_location[latLon];
-					j++;
-				} else {
-					lon = gp_location[latLon];
-				}
-			}
-			waypoints.push(lat + ', ' + lon);
+//			var lat, lon, j = 0;
+//			for (var latLon in gp_location) {
+//				if (j === 0) {
+//					lat = gp_location[latLon];
+//					j++;
+//				} else {
+//					lon = gp_location[latLon];
+//				}
+//			}
+			waypoints.push(gp_location[Object.keys(gp_location)[0]] + ', ' + gp_location[Object.keys(gp_location)[1]]);
 		}
 	}
 	return waypoints;
