@@ -428,13 +428,12 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 function gm_createColor (index, length) {//color start from Green #00FF00 rgb(0,255,0) -> Yellow #FFFF00 rgb(255,255,0) -> Red #FF0000 rgb(255,0,0)
 	var color = "";
 	var r, g, b = '0';
-	
-	if (index < length/2) {
+	if ( Math.abs(index - length/2) < 1 ) { // include index === length/2 
+		color = 'rgb(255,255,0)';
+	} else if (index < length/2) {
 		r = Math.round(255*index*2/length);
 		g = '255';
 		color = 'rgb(' + r + ',' + g + ',' + b + ')';
-	} else if (index === length/2) {
-		color = 'rgb(255,255,0)';
 	} else {
 		r = '255';
 		g = Math.round(255 - 255*(2*index - length)/length);
