@@ -263,7 +263,12 @@ function sc_select_dialog (parsedDate) {
 			Done: function(){
 				$( this ).dialog( "close" ); // Close dialog
 				// TODO next to load status and check-in
-				getSCLocation(editRouteId, curr_status_ids_after_given_date, curr_checkins_ids_after_given_date);
+				
+				$('#sc_list_ul').find('.highlighted').each(function(){
+					selected_statusCheckin.push( $(this).attr('data-scId') );
+				});
+				
+				getSCLocation(editRouteId, selected_statusCheckin);
 				addEditRouteNameText();
 			}
 		}
@@ -283,7 +288,6 @@ function addEditRouteNameText () {
 	} else {
 		var unordered_list = $('<ul></ul>').attr('id', 'my_route_list').attr('class', 'ipList'); // Create a ul tag
 		$('#me').append(unordered_list); // Append ul to the dialog div
-		console.log('not');
 	}
 	var newRouteDefault = "New untitled route";
 	var input = $('<input />').attr('rows', '1').val(newRouteDefault).focus().bind('keyup', function(e) {
@@ -484,12 +488,10 @@ function addListenerToLi (li) {
 	});
 }
 
-function getSCLocation (editRouteId, statusIds, checkinIds) {
-	for (var i = 0; i < statusIds.length + checkinIds.length; i++) {
-		var id = statusIds[i];
-		if ( i >= statusIds.length) {
-			id = checkinIds[i - statusIds.length];
-		}
+function getSCLocation (editRouteId, selected_scId) {
+	for (var i = 0; i < selected_scId.length; i++) {
+		var id = selected_scId[i];
+		
 		FB.api('/' + id, function(response) {
 			var uId = response.from.id
 			var sId = response.id;
@@ -734,10 +736,6 @@ function getImageTag(pId, callback, marker) {
 
 function selectAllStatusCheckin (div_name) {
 	$('#' + div_name + ' li').addClass('highlighted');
-	selected_statusCheckin.splice(0, selected_statusCheckin.length);
-	$('#' + div_name + ' li').each ( function () {
-		selected_statusCheckin.push( $(this).data("scid").toString() ); // Note: store string.
-	});
 }
 
 
