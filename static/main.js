@@ -275,8 +275,8 @@ function sc_select_dialog (parsedDate) {
 	$("#sc_list_ul").before("<a href=\"javascript:void(0)\" onClick=\"selectAllStatusCheckin('fb_sc_select_dialog')\">Select All</a> ");// TODO selectAllStatusAndCheckIn
 
 	// Get status & check-ins
-	fb_get_status('/me?fields=statuses', parsedDate);// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
-	fb_get_checkin('/me?fields=checkins', parsedDate);
+	fb_get_statusOrCheckin('/me?fields=statuses.limit(10)', "status");// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
+	fb_get_statusOrCheckin('/me?fields=checkins.limit(10)', "checkin");
 }
 
 function addEditRouteNameText () {
@@ -362,107 +362,146 @@ function fb_get_photos (url, parsedDate) {
 	});
 }
 
-var curr_status_count_after_given_date = 0;
-var curr_status_ids_after_given_date = new Array();
-function fb_get_status (url, parsedDate) { // me?fields=statuses
+var sc_list_ulPopulateDone = false;
+var sc_objs = new Array();
+var sc_sum = 0;
+var status_next_url;
+var checkin_next_url;
+function fb_get_statusOrCheckin (url, option) {
 	FB.api(url, function(response) {
-		var statuses = null;
+		var items = null;
 		if (response.data) {
-			statuses = response.data;
+			items = response.data;
+			checkin_next_url = response.paging.next.substring(26);
 		} else {
-			statuses = response.statuses.data;
-		}
-		// TODO else no status at all
-		var process_next_page = true;
-		for (var i = 0; i < statuses.length; i++) {
-			var status = statuses[i];
-			var created_time = status.updated_time;
-			var created_time_millisecond = Date.parse(created_time);
-			if (created_time_millisecond > parsedDate) { // Store ID.
-				curr_status_count_after_given_date++ ;
-				curr_status_ids_after_given_date.push(status.id);
+			if (option === 'status') {
+				items = response.statuses.data;
+				status_next_url = response.statuses.paging.next.substring(26);
 			} else {
-				// If status is created before the given date, then the rest of the statuses will all be before the given date. thus no need to continue.
-				process_next_page = false;
-				break;
+				items = response.checkins.data;
+				checkin_next_url = response.checkins.paging.next.substring(26);
 			}
 		}
-
-//		console.log(process_next_page);
-		// Go to next page
-		if (process_next_page && response.statuses) { // first page of photos. 
-			if(response.statuses.paging && response.statuses.paging.next) {
-				new_url = response.statuses.paging.next.substring(26);// 26: https://graph.facebook.com/
-				fb_get_status(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
-			} else {
-				// No more photos
-				displayStatusCheckin(curr_status_count_after_given_date, curr_status_ids_after_given_date, "status");
-			}
-		} else if (process_next_page && response.data) { // not first page -> 2,3,4... pages. Only have one data field. 
-			if (response.data.length !== 0 && response.paging.next) {
-				new_url = response.paging.next.substring(26);
-				fb_get_status(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
-			} else {
-				// No more photos
-				displayStatusCheckin(curr_status_count_after_given_date, curr_status_ids_after_given_date, "status");
-			}
+		for (var i = 0; i < items.length; i++) {
+			var item = items[i];
+			var fb_date = item.updated_time ? fb_date = item.updated_time : fb_date = item.created_time;
+			var obj = {
+					id : item.id,
+					date : fb_date,
+					msg : item.message,
+					place : item.place
+			};
+			sc_objs.push(obj);
+		}
+		
+		if (sc_sum === 0) {
+			sc_sum += items.length;
+			displayStatusCheckin(0, sc_sum, option);
 		} else {
-			displayStatusCheckin(curr_status_count_after_given_date, curr_status_ids_after_given_date, "status");
+			while ( !sc_list_ulPopulateDone ) {
+				console.log(sc_list_ulPopulateDone);
+			}
+			var oldSum = sc_sum;
+			sc_sum += items.length;
+			displayStatusCheckin(oldSum, sc_sum, option);
 		}
 	});
 }
 
-var curr_checkins_count_after_given_date = 0;
-var curr_checkins_ids_after_given_date = new Array();
-function fb_get_checkin (url, parsedDate) {
-	FB.api(url, function(response) {
-		// TODO: no check in at all.
-		var checkins = null;
-		if (response.data) {
-			checkins = response.data;
+var selected_statusCheckin = new Array();
+var id_time = new Array();
+var _FbSmallLogoTag = "<img src='static/facebook_logo.png' alt='facebook_logo' height='30'>";
+function displayStatusCheckin (startIndex, endIndex, option) { // curr_status_count curr_status_ids
+	for (var i = startIndex; i < endIndex; i ++ ) {
+		var obj = sc_objs[i];
+		var fb_id = obj.id;
+		var fb_date = obj.date;
+		var fb_place = obj.place;
+		var fb_message = obj.msg;
+		
+		if ( !$("#sc_list_ul li").length ) { // No li in ul.
+			var li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook').appendTo($('#sc_list_ul'));
+			li.append(_FbSmallLogoTag);
+			
+			if (!fb_message) {
+				li.append("<p>" + fb_place.name + "</p>");
+			} else if (!fb_place) {
+				li.append("<p>" + fb_message + "</p>");
+			} else {
+				li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
+			}
+			id_time[fb_id] = Date.parse(fb_date);
+			addListenerToLi(li);
 		} else {
-			checkins = response.checkins.data;
+			$($("#sc_list_ul li").get().reverse()).each(function(index) {
+				var li;
+				if (Date.parse(fb_date) > id_time[$(this).attr('data-scid')]) {
+					/*
+					 * If this is the only li => last li and number of li equals 1
+					 * OR
+					 * this is the top li => index = number of li - 1 => means have to insert new li before this
+					 */ 
+					if ( 
+							(
+									$('#sc_list_ul li').last().attr('data-scId') === $(this).attr('data-scId')
+									&& 
+									$("#sc_list_ul li").length === 1
+							)
+							|| 
+							index === $("#sc_list_ul li").length - 1
+						) 
+					{
+						li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
+						$(this).before(li);
+						
+						li.append(_FbSmallLogoTag);
+						if (!fb_message) {
+							li.append("<p>" + fb_place.name + "</p>");
+						} else if (!fb_place) {
+							li.append("<p>" + fb_message + "</p>");
+						} else {
+							li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
+						}
+						
+						id_time[fb_id] = Date.parse(fb_date);
+						return false;
+					} else {
+						// Do nothing. Skip to next li.
+					}
+				} else {
+					// insert content below this.
+					li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
+					$(this).after(li);
+					
+					scListLiAddMsgPlace (li, fb_message, fb_place);
+					
+//					li.append(_FbSmallLogoTag);
+//					if (!fb_message) {
+//						li.append("<p>" + fb_place.name + "</p>");
+//					} else if (!fb_place) {
+//						li.append("<p>" + fb_message + "</p>");
+//					} else {
+//						li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
+//					}
+					id_time[fb_id] = Date.parse(fb_date);
+					return false;
+				}
+			});
 		}
-		// TODO else no status at all
-		var process_next_page = true;
-		for (var i = 0; i < checkins.length; i++) {
-			var checkin = checkins[i];
-			var created_time = checkin.created_time;
-			var created_time_millisecond = Date.parse(created_time);
-			if (created_time_millisecond > parsedDate) { // Store ID.
-				curr_checkins_count_after_given_date++ ;
-				curr_checkins_ids_after_given_date.push(checkin.id);
-			} else {
-				// If status is created before the given date, then the rest of the statuses will all be before the given date. thus no need to continue.
-				process_next_page = false;
-				break;
-			}
-		}
-
-//		console.log(process_next_page);
-		// Go to next page
-		if (process_next_page && response.checkins) { // first page of photos. 
-			if(response.checkins.paging && response.checkins.paging.next) {
-				new_url = response.checkins.paging.next.substring(26);// 26: https://graph.facebook.com/
-				fb_get_checkin(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
-			} else {
-				// No more photos
-				displayStatusCheckin(curr_checkins_count_after_given_date, curr_checkins_ids_after_given_date, "checkin");
-			}
-		} else if (process_next_page && response.data) { // not first page -> 2,3,4... pages. Only have one data field. 
-			if (response.data.length !== 0 && response.paging.next) {
-				new_url = response.paging.next.substring(26);
-				fb_get_checkin(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
-			} else {
-				// No more photos
-				displayStatusCheckin(curr_checkins_count_after_given_date, curr_checkins_ids_after_given_date, "checkin");
-			}
-		} else if (!process_next_page) {
-			displayStatusCheckin(curr_checkins_count_after_given_date, curr_checkins_ids_after_given_date, "checkin");
-		}
-	});
+	}
+	sc_list_ulPopulateDone = true;
 }
 
+function scListLiAddMsgPlace (li, fb_message, fb_place) {
+	li.append(_FbSmallLogoTag);
+	if (!fb_message) {
+		li.append("<p>" + fb_place.name + "</p>");
+	} else if (!fb_place) {
+		li.append("<p>" + fb_message + "</p>");
+	} else {
+		li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
+	}
+}
 
 function getSCLocation (editRouteId, statusIds, checkinIds) {
 	for (var i = 0; i < statusIds.length + checkinIds.length; i++) {
@@ -712,136 +751,15 @@ function getImageTag(pId, callback, marker) {
 }
 
 
-// TODO code in this function need to be optimised.
-var selected_statusCheckin = new Array();
-var id_time = new Array();
-function displayStatusCheckin (count, ids, service) {
-	// Put status on HTML
-	for (var i = 0; i < count; i++) {
-		var id = ids[i]; // e.g. dongminator fb status ID 125260037650058
-		// TODO alter image
-		var img_html = "<img src='static/facebook_logo.png' alt='facebook_logo' height='30'>"; // TODO facebook icon height
-		
-		// Find data from FB
-		FB.api('/' + id, function(response) {
-			var fb_id = response.id;
-			var fb_date;
-			if (response.updated_time) {// status
-				fb_date = response.updated_time;
-			} else if (response.created_time) {// checkin
-				fb_date = response.created_time;
-			}
-			var fb_message = response.message;
-			var fb_place = response.place;
-			
-			// get the last li. get its id. find the date_time in array. compare with this date_time. 
-			$($("#sc_list_ul li").get().reverse()).each(function(index) {
-				if (Date.parse(fb_date) > id_time[$(this).attr('data-scid')]) {
-					if ( $('#sc_list_ul li').last().attr('data-scId') === $(this).attr('data-scId') ) {
-						var li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
-						$(this).before(li);
-						
-						li.append(img_html);
-						if (!fb_message) {
-							li.append("<p>" + fb_place.name + "</p>");
-						} else if (!fb_place) {
-							li.append("<p>" + fb_message + "</p>");
-						} else {
-							li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
-						}
-						
-						id_time[fb_id] = Date.parse(fb_date);
-						
-						$('#sc_list_ul li').click(function() {
-							$(this).addClass('highlighted');
-							var selected_sc_id = $(this).attr('data-scId');
-//							console.log(selected_sc_id);
-							// Set the form value
-							if (selected_sc.indexOf(selected_sc_id) !== -1) { // SC exists in array -> remove.
-								var index = selected_sc.indexOf(selected_sc_id);
-								selected_sc.splice(index, 1);
-								// Unhighlight all the images
-								$(this).removeClass('highlighted');
-							} else {
-								selected_sc.push(selected_sc_id);
-								// Highlight the newly selected image
-								$(this).addClass('highlighted');
-							}
-						});
-						return false;
-					} else {
-						console.log("not lst li");
-					}
-					// next
-				} else {
-					// insert content below this.
-					var li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
-					$(this).after(li);
-					
-					li.append(img_html);
-					if (!fb_message) {
-						li.append("<p>" + fb_place.name + "</p>");
-					} else if (!fb_place) {
-						li.append("<p>" + fb_message + "</p>");
-					} else {
-						li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
-					}
-					
-					id_time[fb_id] = Date.parse(fb_date);
-					
-					$('#sc_list_ul li').click(function() {
-						$(this).addClass('highlighted');
-						var selected_sc_id = $(this).attr('data-scId');
-						// Set the form value
-						if (selected_sc.indexOf(selected_sc_id) !== -1) { // SC exists in array -> remove.
-							var index = selected_sc.indexOf(selected_sc_id);
-							selected_sc.splice(index, 1);
-							// Unhighlight all the images
-							$(this).removeClass('highlighted');
-						} else {
-							selected_sc.push(selected_sc_id);
-							// Highlight the newly selected image
-							$(this).addClass('highlighted');
-						}
-					});
-					return false;
-				}
-			});
-			
-			if ( !$("#sc_list_ul li").length) {
-				var li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook').appendTo($('#sc_list_ul'));
-				li.append(img_html);
-				if (!fb_message) {
-					li.append("<p>" + fb_place.name + "</p>");
-				} else if (!fb_place) {
-					li.append("<p>" + fb_message + "</p>");
-				} else {
-					li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
-				}
-				
-				id_time[fb_id] = Date.parse(fb_date);
-				
-				$('#sc_list_ul li').click(function() {
-					$(this).addClass('highlighted');
-					var selected_sc_id = $(this).attr('data-scId');
-					// Set the form value
-					if (selected_sc.indexOf(selected_sc_id) !== -1) { // SC exists in array -> remove.
-						var index = selected_sc.indexOf(selected_sc_id);
-						selected_sc.splice(index, 1);
-						// Unhighlight all the images
-						$(this).removeClass('highlighted');
-					} else {
-						selected_sc.push(selected_sc_id);
-						// Highlight the newly selected image
-						$(this).addClass('highlighted');
-					}
-				});
-			}
-		});
-	}
-
-	// Add click listener
-	var selected_sc = new Array();
+function addListenerToLi (li) {
+	li.click(function() {
+		$(this).addClass('highlighted');
+		if ( $(this).hasClass('highlighted') ) { // SC exists in array -> remove.
+			$(this).removeClass('highlighted');
+		} else {
+			$(this).addClass('highlighted');
+		}
+	});
 }
 
 function selectAllStatusCheckin (div_name) {
