@@ -262,7 +262,6 @@ function sc_select_dialog (parsedDate) {
 		buttons: {
 			Done: function(){
 				$( this ).dialog( "close" ); // Close dialog
-//				console.log(selected_statusCheckin);
 				// TODO next to load status and check-in
 				getSCLocation(editRouteId, curr_status_ids_after_given_date, curr_checkins_ids_after_given_date);
 				addEditRouteNameText();
@@ -319,6 +318,7 @@ function addEditRouteNameText () {
 	// TODO edit route on route list
 }
 
+
 function fb_get_photos (url, parsedDate) {
 	FB.api(url, function(response) {
 		var photos = null;
@@ -358,7 +358,6 @@ function fb_get_photos (url, parsedDate) {
 				displayPhotos ();
 			}
 		}
-
 	});
 }
 
@@ -399,7 +398,7 @@ function fb_get_statusOrCheckin (url, option) {
 			displayStatusCheckin(0, sc_sum, option);
 		} else {
 			while ( !sc_list_ulPopulateDone ) {
-				console.log(sc_list_ulPopulateDone);
+				console.log("aaa");
 			}
 			var oldSum = sc_sum;
 			sc_sum += items.length;
@@ -410,7 +409,7 @@ function fb_get_statusOrCheckin (url, option) {
 
 var selected_statusCheckin = new Array();
 var id_time = new Array();
-var _FbSmallLogoTag = "<img src='static/facebook_logo.png' alt='facebook_logo' height='30'>";
+var FbSmallLogoTag = "<img src='static/facebook_logo.png' alt='facebook_logo' height='30'>";
 function displayStatusCheckin (startIndex, endIndex, option) { // curr_status_count curr_status_ids
 	for (var i = startIndex; i < endIndex; i ++ ) {
 		var obj = sc_objs[i];
@@ -418,23 +417,13 @@ function displayStatusCheckin (startIndex, endIndex, option) { // curr_status_co
 		var fb_date = obj.date;
 		var fb_place = obj.place;
 		var fb_message = obj.msg;
-		
+		var li;
 		if ( !$("#sc_list_ul li").length ) { // No li in ul.
-			var li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook').appendTo($('#sc_list_ul'));
-			li.append(_FbSmallLogoTag);
-			
-			if (!fb_message) {
-				li.append("<p>" + fb_place.name + "</p>");
-			} else if (!fb_place) {
-				li.append("<p>" + fb_message + "</p>");
-			} else {
-				li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
-			}
+			li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook').appendTo($('#sc_list_ul'));
+			scListLiAddMsgPlace (li, fb_message, fb_place);
 			id_time[fb_id] = Date.parse(fb_date);
-			addListenerToLi(li);
 		} else {
 			$($("#sc_list_ul li").get().reverse()).each(function(index) {
-				var li;
 				if (Date.parse(fb_date) > id_time[$(this).attr('data-scid')]) {
 					/*
 					 * If this is the only li => last li and number of li equals 1
@@ -453,16 +442,7 @@ function displayStatusCheckin (startIndex, endIndex, option) { // curr_status_co
 					{
 						li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
 						$(this).before(li);
-						
-						li.append(_FbSmallLogoTag);
-						if (!fb_message) {
-							li.append("<p>" + fb_place.name + "</p>");
-						} else if (!fb_place) {
-							li.append("<p>" + fb_message + "</p>");
-						} else {
-							li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
-						}
-						
+						scListLiAddMsgPlace (li, fb_message, fb_place);
 						id_time[fb_id] = Date.parse(fb_date);
 						return false;
 					} else {
@@ -472,28 +452,19 @@ function displayStatusCheckin (startIndex, endIndex, option) { // curr_status_co
 					// insert content below this.
 					li = $('<li/>').attr('data-scId', fb_id).attr('data-api', 'facebook');
 					$(this).after(li);
-					
 					scListLiAddMsgPlace (li, fb_message, fb_place);
-					
-//					li.append(_FbSmallLogoTag);
-//					if (!fb_message) {
-//						li.append("<p>" + fb_place.name + "</p>");
-//					} else if (!fb_place) {
-//						li.append("<p>" + fb_message + "</p>");
-//					} else {
-//						li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
-//					}
 					id_time[fb_id] = Date.parse(fb_date);
 					return false;
 				}
 			});
 		}
+		addListenerToLi (li);
 	}
 	sc_list_ulPopulateDone = true;
 }
 
 function scListLiAddMsgPlace (li, fb_message, fb_place) {
-	li.append(_FbSmallLogoTag);
+	li.append(FbSmallLogoTag);
 	if (!fb_message) {
 		li.append("<p>" + fb_place.name + "</p>");
 	} else if (!fb_place) {
@@ -501,6 +472,16 @@ function scListLiAddMsgPlace (li, fb_message, fb_place) {
 	} else {
 		li.append("<p>" + fb_message + " - at " + fb_place.name + "</p>");
 	}
+}
+
+function addListenerToLi (li) {
+	li.click(function() {
+		if ( $(this).hasClass('highlighted') ) { // SC exists in array -> remove.
+			$(this).removeClass('highlighted');
+		} else {
+			$(this).addClass('highlighted');
+		}
+	});
 }
 
 function getSCLocation (editRouteId, statusIds, checkinIds) {
@@ -750,17 +731,6 @@ function getImageTag(pId, callback, marker) {
 	});
 }
 
-
-function addListenerToLi (li) {
-	li.click(function() {
-		$(this).addClass('highlighted');
-		if ( $(this).hasClass('highlighted') ) { // SC exists in array -> remove.
-			$(this).removeClass('highlighted');
-		} else {
-			$(this).addClass('highlighted');
-		}
-	});
-}
 
 function selectAllStatusCheckin (div_name) {
 	$('#' + div_name + ' li').addClass('highlighted');
