@@ -165,15 +165,15 @@ class Bound(webapp2.RequestHandler):
         friendList = self.request.get('friendList')
         friendList = json.loads(friendList)
         
-        users = []
+        usersIds = []
         for friendId in friendList:
             
             sNMap = db.GqlQuery("SELECT * FROM SNMap WHERE snId = :1 AND snName = :2", friendId, 'Facebook')
             if sNMap.count():
                 for sNEntry in sNMap:
-                    user = sNEntry.user
-                    if user not in users:
-                        users.append(user)
+                    userId = sNEntry.user.key().id()
+                    if userId not in usersIds:
+                        usersIds.append(userId)
                 
         points = db.GqlQuery("SELECT * FROM Point WHERE long > :1 AND long < :2", float(lonLeft), float(lonRight))
         latLon = []
@@ -182,8 +182,9 @@ class Bound(webapp2.RequestHandler):
                 lat = p.lat
                 lon = p.long
                 if lat > float(latBot) and lat < float(latTop):
-                    if p.user in users:
+                    if p.user.key().id() in usersIds:
                         latLon.append(str(lat) + ":" + str(lon))
+        self.response.out.write(latLon)
 
 
 class Delete(webapp2.RequestHandler):

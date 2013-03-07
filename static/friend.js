@@ -116,11 +116,20 @@ function addSelectAllButton () {
 	$('<button></button>', {
 		text: 'Show heat map',
 		click: function () { 
-			gm_addHeatmapLayer(selectedFriendIds);
+			if (this.childNodes[0].textContent === 'Show heat map') {
+				gm_addHeatmapLayer(selectedFriendIds);
+			} else {
+				gm_removeHeatmapLayer();
+				this.childNodes[0].textContent = 'Show heat map';
+			}
 		}
 	}).appendTo('#friend_div').button();
 	
 	
+}
+
+function f_changeHeatMapButtonText () {
+	$("button span:contains('Show heat map')").text('Hide heat map');
 }
 
 function selectAllFriends () {
