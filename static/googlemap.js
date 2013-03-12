@@ -232,7 +232,7 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 
 
 // RouteType: create, or display
-function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, routeType) {
+function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex) {
 	var wpNumber = 0;
 	if (rStart || rEnd) {
 		wpNumber = waypoints.length + 1;
@@ -240,7 +240,7 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, rout
 		wpNumber = waypoints.length - 1;
 	}
 	if (i < wpNumber) {
-		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType);
+		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
 		setTimeout(tempfunction, pause_time);
 	}
 }
@@ -248,7 +248,7 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, rout
 var overlays = new Array();
 
 
-function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
+function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex) {
 	return function () {
 		var start_place_string;
 		var end_place_string;
@@ -286,8 +286,6 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 		
 		if (routeType === "create" || routeType === "edit") {
 			google.maps.event.addListener(directionsDisplay, 'directions_changed', function() {// Listen when users drag the route.
-				console.log(directionsDisplay.directions.Kb);
-				console.log(directionsDisplay.directions.Kb.waypoints);
 				// Add the waypoint to array.
 				
 //				var waypointsArray = "the waypoints array";
@@ -297,89 +295,175 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType) {
 //					place: directionsDisplay.directions.
 //				};
 				
-				
 				// Find the new waypoint. There should be just one. 
-				var newWP = directionsDisplay.directions.Kb.waypoints;
+				var directionDisplaydirections = directionsDisplay.directions;
+				var NbOrHb = directionDisplaydirections[Object.keys(directionDisplaydirections)[2]];
+				var newWP = NbOrHb.waypoints;
 				if (newWP) {
+					console.log(newWP);
 					// Remove this route.
-					directionsDisplay.setMap(null);
 					var newWPLat = newWP[0].location[Object.keys(newWP[0].location)[0]];
 					var newWPLon = newWP[0].location[Object.keys(newWP[0].location)[1]];
-					
-					console.log(newWPLat + " " + newWPLon);
-					
+//					console.log(newWPLat + " " + newWPLon + " " + waypoints.length);
 					// Find the closest marker to this waypoint
 					var indexOfDisplayedRoute = routesDisplayed.indexOf(timestamp);
-					console.log(indexOfDisplayedRoute);
-					console.log(routesMarkers[indexOfDisplayedRoute]);
-					var item = findClosestPointToNewWaypoint(newWPLat, newWPLon, routesMarkers[indexOfDisplayedRoute]);
+					var closestMarker = findClosestPointToNewWaypoint(newWPLat, newWPLon, routesMarkers[indexOfDisplayedRoute]);
+					var closestMarkerIndex = routesMarkers[indexOfDisplayedRoute].indexOf(closestMarker);
+					var closestMarkerPosition = closestMarker.position;
+					var closestMarkerLat = closestMarkerPosition[Object.keys(closestMarkerPosition)[0]];
+					var closestMarkerLon = closestMarkerPosition[Object.keys(closestMarkerPosition)[1]];
+					// Find start and end points of this route
+					var startLocation = directionsDisplay.directions.routes[0].legs[0].start_location; 
+					var startLat = startLocation[Object.keys(startLocation)[0]];
+					var startLon = startLocation[Object.keys(startLocation)[1]];
+					var endLocation = directionsDisplay.directions.routes[0].legs[0].end_location;
+					var endLat = endLocation[Object.keys(endLocation)[0]];
+					var endLon = endLocation[Object.keys(endLocation)[1]];
 					
+					// Check the closest point is not start/end marker.
+					if (
+							( Math.abs(closestMarkerLat - startLat) < 0.001 && Math.abs(closestMarkerLon - startLon) < 0.0001)
+							|| (Math.abs(closestMarkerLat - endLat) < 0.001 && Math.abs(closestMarkerLat - endLon) < 0.0001)
+					) {
+						console.log("Closest marker cannot be start/end marker");
+					} else {
+						directionsDisplay.setMap(null);
+						var numberOfItems = 0;
+						for (var j = 0; j < routesItems[indexOfDisplayedRoute].length; j++) {
+							numberOfItems = numberOfItems + routesItems[indexOfDisplayedRoute][j].length;
+						}
+						// j is the number of route stored in the route array. 'stamp;j'
+						for (var j = 0; j < numberOfItems - 1; j ++) {
+							console.log(routes[timestamp+";"+j]);
+							console.log(j + " " + numberOfItems);
+							if (routes[timestamp+";"+j] === directionsDisplay) {
+								// Create new waypoints and push start, new waypoint and end point.
+								var newWaypoints = new Array();
+								newWaypoints.push(startLat + "," + startLon);
+								newWaypoints.push(newWPLat + "," + newWPLon);
+								newWaypoints.push(endLat + "," + endLon);
+
+								// Modify keys after this route.
+								for (var k = numberOfItems - 2; k > j; k--) {
+									if ( routes[timestamp + ";" + k] ) {
+										var numberOfNewItems = 1; // TODO this needed to be the number of items on the new marker.
+										routes[timestamp + ";" + (k + numberOfNewItems)] = routes[timestamp + ";" + k];
+										delete routes[timestamp + ";" + k];
+									}
+								}
+								// Draw two new routes.
+								temp2 (0, newWaypoints, 0, '', '', null, timestamp, "edit", j);
+								
+								$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
+									var result = JSON.parse(data);
+									// the new route should be the last one.
+									for (var routeIndex = 0; routeIndex < result.length; routeIndex++) {
+										var route = result[routeIndex];
+										console.log('=====');
+										console.log(route);
+										console.log(route['id']);
+										console.log(timestamp.split(":")[2]);
+										
+										if (route['id'] === timestamp.split(":")[2]) {
+											var routeWPs = route['waypoints'];
+											// Push to the right index.
+											// j is the index to push after. Because there are j items before the route j
+											var itemString = routesItems[indexOfDisplayedRoute][closestMarkerIndex][0].content;
+											var snApi = $(itemString).find('p').attr('data-api');
+											var snSCid = $(itemString).find('p').attr('data-scid');
+											
+											// TODO need place.
+											var itemPlace = routesMarkers[indexOfDisplayedRoute][closestMarkerIndex].position;
+											var itemToPush = {
+													api: snApi,
+													id: snSCid,
+													place: itemPlace
+											};
+											console.log(j);
+											routeWPs.splice(j + 1, 0, itemToPush);
+											
+											route['waypoints'] = routeWPs;
+											
+											console.log('=====');
+											console.log(route);
+											
+											result[routeIndex] = route;
+											
+										}
+									}
+									
+									$.post('/store', { postOption : "title", sNId: sNId, sNName : sNName, route : JSON.stringify(result) } , function(data) {
+									});
+								});
+								// If the route is found, stop for loop.
+								break;
+							}
+						}
+					}
 				}
-				
-				
-				
-				
-				// Draw two new routes.
-//				temp2 (0, waypoints, 0, '', '', itemIds, timestamp, routeType)
 				// Store item into array.
 				
-//				waypointsArray.splice(indexToInsertTheObject, 0, "Lene");
+				
+
 			});
 		}
-		
 		
 		var request = {
 				origin:start_place_string,
 				destination:end_place_string,
 				travelMode: google.maps.TravelMode.DRIVING
 		};
-//		console.log(start_place_string + " " + end_place_string);
 		
-		
-		directionsService.route(request, function(result, status) {
-			if (status == google.maps.DirectionsStatus.OK) {
-				var myRoute = result.routes[0].legs[0];
-				var key = timestamp+";"+i;
-				if (routeType === "create") {
-					directionsDisplay.setDirections(result);
-					directionsDisplay.setOptions({ preserveViewport: true });
-					routes[key] = directionsDisplay;
-				} else {
-					var points = new Array();
-					for (var j = 0; j < myRoute.steps.length; j++) {
-		                for (var k = 0; k < myRoute.steps[j].lat_lngs.length; k++) {
-		                    points.push(myRoute.steps[j].lat_lngs[k]);
-		                }
-		            }
-					var color = gm_createColor (i, waypoints.length);
-					routes[key] = drawRoute(points, color);
+		if (waypoints[i] === waypoints[i + 1]) {
+			gm_displayItems(i, waypoints, itemIds, timestamp);
+			i++;
+			temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
+		} else {
+			directionsService.route(request, function(result, status) {
+				if (status == google.maps.DirectionsStatus.OK) {
+					var myRoute = result.routes[0].legs[0];
+					var key = timestamp+";"+i;
+					if (keyStartIndex) {
+						console.log("ssssss:" + keyStartIndex);
+						key = timestamp+";"+ (i + keyStartIndex);
+					}
+					if (routeType === "create" || routeType === "edit") {
+						directionsDisplay.setDirections(result);
+						directionsDisplay.setOptions({ preserveViewport: true });
+						routes[key] = directionsDisplay;
+					} else {
+						var points = new Array();
+						for (var j = 0; j < myRoute.steps.length; j++) {
+			                for (var k = 0; k < myRoute.steps[j].lat_lngs.length; k++) {
+			                    points.push(myRoute.steps[j].lat_lngs[k]);
+			                }
+			            }
+						var color = gm_createColor (i, waypoints.length);
+						routes[key] = drawRoute(points, color);
+					}
+					if (routeType !== "edit") {
+						gm_displayItems(i, waypoints, itemIds, timestamp);
+					}
+					i++;
+					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
+				} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
+					i++;
+					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, keyStartIndex);
+				} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
+					temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp, keyStartIndex);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 				}
-				gm_displayItems(i, waypoints, itemIds, timestamp);
-				i++;
-				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType);
-			} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
-				i++;
-				temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp);
-			} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-				temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp);// TODO 500 can be optimized. if too small, useful query will run only every second. 
-			}
-		});
+			});
+		}
 	}
-	
 }
 
 function findClosestPointToNewWaypoint(newWPLat, newWPLon, gmMarkersArray) {
-	var closestDistance = 255;
-	var closestMarker;
+	var closestDistance = 255, closestMarker;
 	for (var i = 0; i < gmMarkersArray.length; i++) {
 		var markerPosition = gmMarkersArray[i].position;
 		var currLat = markerPosition[Object.keys(markerPosition)[0]];
 		var currLon = markerPosition[Object.keys(markerPosition)[1]];
-		console.log(currLat + " " + currLon);
-		
 		var currDistance = Math.sqrt( (newWPLat - currLat)*(newWPLat - currLat) + (newWPLon - currLon)*(newWPLon - currLon) );
-		console.log(currDistance);
-		
 		if (closestDistance > currDistance) {
 			closestDistance = currDistance;
 			closestMarker = gmMarkersArray[i];
@@ -539,6 +623,7 @@ function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the i
 		for (var j = 0; j < routesItems[indexOfDisplayedRoute][i].length; j ++ ) {
 			objs.push(routesItems[indexOfDisplayedRoute][i][j]);
 		}
+
 		$.fancybox.open(objs, {
 			helpers : {
 				thumbs : {
@@ -632,9 +717,9 @@ function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
 	if (sPlace) {
 		var contentString;
 		if (sMsg) {
-			contentString = '<div><p data-sNId="' + uId + ' data-api="' + sNName + '"' + ' data-scId="' + sId + '">' + sMsg + ' - at ' + sPlace.name + '.</p></div>';
+			contentString = '<div><p data-sNId="' + uId + '" data-api="' + sNName + '"' + ' data-scId="' + sId + '">' + sMsg + ' - at ' + sPlace.name + '.</p></div>';
 		} else {
-			contentString = '<div><p data-sNId="' + uId + ' data-api="' + sNName + '"' + ' data-scId="' + sId + '">Checked in at ' + sPlace.name + '</p></div>';
+			contentString = '<div><p data-sNId="' + uId + '" data-api="' + sNName + '"' + ' data-scId="' + sId + '">Checked in at ' + sPlace.name + '</p></div>';
 		}
 		var obj = {
 				content: contentString
@@ -812,7 +897,7 @@ function modifyJson () {
 		
 		// .each is slow comparing to for loop
 //		$(result).each( function() {
-//			if (this.id === 1) this.title = "oo";
+//			if (this.id === 1) this. = "oo";
 //		});
 		
 		for (var i = 0; i < result.length; i++){
