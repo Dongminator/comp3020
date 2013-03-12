@@ -531,52 +531,56 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 		firstItemAtThisLocation = itemIds[waypoints.indexOf(curr_wp)];
 		firstItemAtThisLocation = firstItemAtThisLocation.split(':')[2];
 	}
+	var markerIcon = 'static/marker_blue.png';
+	if (index === 0) {
+		markerIcon = 'static/marker_start.png';
+	} else if (index === waypoints.length - 1) {
+		markerIcon = 'static/marker_end.png';
+		lastPoint = true;
+	}
+	var wp = waypoints[index];
+	var markerLatLong = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
+	var marker;
+	var indexOfDisplayedRoute = routesDisplayed.indexOf(timestamp);
+	var obj = new Object();
+	if (firstItemAtThisLocation) {// firstItemAtThisLocation is the item ID
+		marker = routes[timestamp + ";marker:" + firstItemAtThisLocation];
+		routesItems[ indexOfDisplayedRoute ][ routesMarkers[indexOfDisplayedRoute].indexOf(marker) ].push(obj);
+		
+		if (lastPoint) {
+			// substitute last marker to end marker.
+		}
+		
+	} else {
+		marker = new google.maps.Marker({
+			position: markerLatLong,
+			map: map,
+			icon: markerIcon
+		});
+		var key = timestamp + ";marker:" + curr_itemId;
+		routes[key] = marker;
+		routesMarkers[indexOfDisplayedRoute].push(marker);
+		routesItems[ indexOfDisplayedRoute ].push( [obj] );
+	}
+
+	// display the last item on the route
+	if (index === waypoints.length - 2 ) { 
+		gm_displayItems (index + 1, waypoints, itemIds, timestamp);
+	}
 	
+	var indexOfMarker = routesMarkers[indexOfDisplayedRoute].indexOf(marker);
+	var indexOfObj = routesItems[indexOfDisplayedRoute][indexOfMarker].indexOf(obj);
 	if (curr_itemApi === "Facebook") {
 		if (curr_itemType === "photo") {
-			var markerIcon = 'static/marker_blue.png';
-			if (index === 0) {
-				markerIcon = 'static/marker_start.png';
-			} else if (index === waypoints.length - 1) {
-				markerIcon = 'static/marker_end.png';
-				lastPoint = true;
-			}
-
 			// only need FB api to get image url. need to create marker here, not in the callback.
 			// fb callback needs to know where to put the image. 
-			var wp = waypoints[index];
-			var markerLatLong = new google.maps.LatLng( wp.split(",")[0], wp.split(",")[1] );
-			var marker;
-			var indexOfDisplayedRoute = routesDisplayed.indexOf(timestamp);
-			var obj = new Object();
-			if (firstItemAtThisLocation) {// firstItemAtThisLocation is the item ID
-				marker = routes[timestamp + ";marker:" + firstItemAtThisLocation];
-				routesItems[ indexOfDisplayedRoute ][ routesMarkers[indexOfDisplayedRoute].indexOf(marker) ].push(obj);
-				
-				if (lastPoint) {
-					// substitute last marker to end marker.
-				}
-				
-			} else {
-				marker = new google.maps.Marker({
-					position: markerLatLong,
-					map: map,
-					icon: markerIcon
-				});
-				var key = timestamp + ";marker:" + curr_itemId;
-				routes[key] = marker;
-				routesMarkers[indexOfDisplayedRoute].push(marker);
-				routesItems[ indexOfDisplayedRoute ].push( [obj] );
-			}
-
-			// display the last item on the route
-			if (index === waypoints.length - 2 ) { 
-				gm_displayItems (index + 1, waypoints, itemIds, timestamp);
-			}
-			
-			var indexOfMarker = routesMarkers[indexOfDisplayedRoute].indexOf(marker);
-			var indexOfObj = routesItems[indexOfDisplayedRoute][indexOfMarker].indexOf(obj);
 			fb_getImageUrl(curr_itemId, gm_displayItems_callback, indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
+		} else {
+			// only need FB api to get image url. need to create marker here, not in the callback.
+			// fb callback needs to know where to put the image. 
+			var routeTimestamp = routesDisplayed[indexOfDisplayedRoute].split(':')[2];
+			console.log(routeTimestamp);
+			fb_getSC(curr_itemId, gm_displayStatus, routeTimestamp);
 		}
 	}
 }
@@ -593,6 +597,7 @@ function gm_displayItems_callback (itemId, url, description, type, indexOfDispla
 	
 	if (lastPoint) {
 		for (var i = 0; i < routesMarkers[indexOfDisplayedRoute].length; i++) {
+			google.maps.event.clearListeners(routesMarkers[indexOfDisplayedRoute][i], 'click');// Remove old listener.
 			addListenersToMarkers (routesMarkers[indexOfDisplayedRoute][i], i, indexOfDisplayedRoute);
 		}
 	}
@@ -612,6 +617,7 @@ function gm_displayItems_callback (itemId, url, description, type, indexOfDispla
  * See Google Map Events tutorial about 'Using Closure in Event Listeners': https://developers.google.com/maps/documentation/javascript/events#EventClosures
  */
 function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the index of the marker
+	console.log("add listenenr " + i);
 	google.maps.event.addListener(marker, 'click', function(event) {
 		console.log('clicked');
 		var objs = new Array();
@@ -695,6 +701,8 @@ function gm_convert_waypoints (via_places) {
 		} else if (via_places[i].geometry) {
 			var gp_location = via_places[i].geometry.location;
 			waypoints.push(gp_location[Object.keys(gp_location)[0]] + ', ' + gp_location[Object.keys(gp_location)[1]]);
+		} else {
+			waypoints.push(via_places[i][Object.keys(via_places[i])[0]] + ',' + via_places[i][Object.keys(via_places[i])[1]]);
 		}
 	}
 	return waypoints;
@@ -714,6 +722,7 @@ function gm_removeRoute (stamp) {// stamp example: 100004981873901:Facebook:0 sn
 
 
 function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
+	console.log (uId + " " + sNName + " " + sId + " " + sPlace + " " + sMsg + " " + rId) ;
 	if (sPlace) {
 		var contentString;
 		if (sMsg) {
@@ -737,9 +746,16 @@ function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
 			var mLat = markerPosition[Object.keys(markerPosition)[0]];
 			var mLon = markerPosition[Object.keys(markerPosition)[1]];
 			if ( Math.abs(mLat - lat) < 0.00000000001 && Math.abs(mLon - lon) < 0.00000000001) {
+				console.log(obj);
 				marker = currMarkers[i];
 				// Push status/checkin to routesItems objects array. 
-				routesItems[ currRouteIndex ][ i ].push(obj);
+				
+				if ( routesItems[ currRouteIndex ][ i ].length ===  1 && routesItems[ currRouteIndex ][ i ][0]) {// when displaying routes, an empty item will be pushed to this array. So if that is the case, we need to replace the empty object.
+					routesItems[ currRouteIndex ][ i ][0] = obj;
+				} else {
+					routesItems[ currRouteIndex ][ i ].push(obj);
+				}
+				
 				google.maps.event.clearListeners(marker, 'click');// Remove old listener.
 				addListenersToMarkers (marker, i, currRouteIndex);// Add new listener with objects updated
 				break;
@@ -755,8 +771,6 @@ function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
 				map: map,
 				icon: markerIcon
 			});
-			routesItems[ currRouteIndex ];
-			
 			var key = stamp + ";marker:" + sId;
 			routes[key] = marker;
 			routesMarkers[currRouteIndex].push(marker);

@@ -493,7 +493,7 @@ function getSCLocation (editRouteId, selected_scId) {
 		var id = selected_scId[i];
 		
 		FB.api('/' + id, function(response) {
-			var uId = response.from.id
+			var uId = response.from.id;
 			var sId = response.id;
 			var sMsg = response.message;
 			var sPlace = response.place;
@@ -773,6 +773,16 @@ function fb_getImageUrl (itemId, gm_callback, indexOfDisplayedRoute, indexOfMark
 		gm_callback(itemId, url, description, "Facebook", indexOfDisplayedRoute, indexOfMarker, indexOfObj, lastPoint);
 	});
 	
+}
+
+function fb_getSC (itemId, gm_callback, routeTimestamp) {
+	FB.api('/' + itemId, function(response) {
+		var uId = response.from.id;
+		var sId = response.id;
+		var sMsg = response.message;
+		var sPlace = response.place;
+		gm_callback(uId, 'Facebook', sId, sPlace, sMsg, routeTimestamp);// gm_displayStatus
+	});
 }
 
 //The next two functions (calculate_time_zone & convert) by Josh Fraser (http://www.onlineaspect.com)
