@@ -15,6 +15,16 @@ $(document).ready(function(){
 	}, function() {
 	    $(this).stop(true, false).animate({ opacity:0.2 });// out
 	});
+	
+	$('<button>').appendTo('#navigation').button({
+		label: "Logout"
+	}).click(function( event ) {
+		logout();
+    }).css({height:'25px', 'padding-top': '0px', 'font-size': '10pt', 'margin-left':$(window).width()-100, 'margin-right':'0px'});
+	
+	$(window).resize(function() {
+		$('#navigation').find('button').css({'margin-left':$(window).width()-100});
+	});
 });
 
 window.fbAsyncInit = function() {
