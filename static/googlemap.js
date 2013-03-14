@@ -5,6 +5,9 @@ var routesDisplayed = new Array();// store route ids (i.e. route creation time)
 var routesMarkers = new Array();// routesMarkers[0] => array of markers in route 0. 
 var routesItems = new Array();// store objects (contains route ID, markers)
 
+var _polylineStrokeWeight = 7;
+var _polylineStrokeWeightMouseOver = 14
+
 function initialize() {
 	var stylesArray = [{
 		featureType: 'road',
@@ -86,12 +89,33 @@ function gm_addHeatmapLayer (selectedFriendIds) {
 				return false;
 			}
 		});
+		
+		// Set all polyline weight to 3.
+		for (var key in routes) {
+			var routeStamp = key.split(';')[0];
+			var routeComponent = key.split(';')[1];
+			if (parseInt(routeComponent) || parseInt(routeComponent) === 0) {
+				console.log(key);
+				var routePolyline = routes[key];
+				addListenersToPolyline (routePolyline, 3, 6, 3);
+			} else {
+				console.log(key);
+			}
+		}
 	}
 }
 
 function gm_removeHeatmapLayer () {
 	if (heatmap) {
-		heatmap.setMap(null);	
+		heatmap.setMap(null);
+		for (var key in routes) {
+			var routeStamp = key.split(';')[0];
+			var routeComponent = key.split(';')[1];
+			if (parseInt(routeComponent) || parseInt(routeComponent) === 0) {
+				var routePolyline = routes[key];
+				addListenersToPolyline (routePolyline, _polylineStrokeWeight, _polylineStrokeWeightMouseOver, _polylineStrokeWeight);
+			}
+		}
 	}
 }
 
@@ -448,9 +472,9 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
 				} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
 					i++;
-					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, keyStartIndex);
+					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
 				} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-					temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp, keyStartIndex);// TODO 500 can be optimized. if too small, useful query will run only every second. 
+					temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 				}
 			});
 		}
@@ -495,7 +519,7 @@ function drawRoute (points, color) {
 				path: points,
 				strokeColor: color,
 				strokeOpacity: 0.5,
-				strokeWeight: 5
+				strokeWeight: 7
 //				editable: true
 			}
 	);
@@ -504,12 +528,12 @@ function drawRoute (points, color) {
 	// Add a listener for the rightclick event on the routLine
 	google.maps.event.addListener(routLine, 'mouseover', function(){
 		routLine.setOptions({
-			strokeWeight: 10
+			strokeWeight: _polylineStrokeWeightMouseOver
 		});
 	});
 	google.maps.event.addListener(routLine, 'mouseout', function(){
 		routLine.setOptions({
-			strokeWeight: 5
+			strokeWeight: _polylineStrokeWeight
 		});
 	});
 	return routLine;
@@ -628,8 +652,12 @@ function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the i
 //		curr_infoWindow = infowindow;
 		for (var j = 0; j < routesItems[indexOfDisplayedRoute][i].length; j ++ ) {
 			objs.push(routesItems[indexOfDisplayedRoute][i][j]);
+			console.log(i + " " + j);
+			console.log(routesItems[indexOfDisplayedRoute][i][j]);
+			
 		}
-
+		
+		console.log(objs);
 		$.fancybox.open(objs, {
 			helpers : {
 				thumbs : {
@@ -637,6 +665,24 @@ function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the i
 					height: 50
 				}
 			}
+		});
+	});
+}
+
+function addListenersToPolyline (routePolyline, initialWeight, mouseOverWeight, mouseOutWeight) {
+	routePolyline.setOptions({
+		strokeWeight: initialWeight
+	});
+	google.maps.event.clearListeners(routePolyline, 'mouseOver');
+	google.maps.event.clearListeners(routePolyline, 'mouseout');
+	google.maps.event.addListener(routePolyline, 'mouseover', function(){
+		routePolyline.setOptions({
+			strokeWeight: mouseOverWeight
+		});
+	});
+	google.maps.event.addListener(routePolyline, 'mouseout', function(){
+		routePolyline.setOptions({
+			strokeWeight: mouseOutWeight
 		});
 	});
 }
