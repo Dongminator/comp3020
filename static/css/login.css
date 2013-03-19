@@ -1,0 +1,62 @@
+html {
+	height: 100%
+}
+
+body {
+	height: 100%;
+	margin: 0;
+	padding: 0
+}
+
+#map {
+	height: 100%
+}
+
+#content {
+	opacity: 0.9;
+	width: 70%;
+	height: 70%;
+	background-color: gray;
+	position: absolute; 
+	top: 15%; 
+	left: 15%; 
+	text-align:center;
+	border-radius:10px;
+}
+
+#infoDiv {
+	width: 100%;
+	height: 100%;
+	float: left;
+  	clear: none; 
+}
+
+.infoSubDiv {
+	width: 45%;
+	height: 100%;
+}
+
+.nav{
+    list-style:none;
+    margin:0;
+    padding:0;
+    text-align:center;
+}
+
+.nav li{
+    display:inline;
+}
+
+.nav a, .nav a:visited { /* grouping these selectors makes sure that your links retain their button look even after being visited */
+	display:inline-block;
+	padding: 0px 5px 0px 15px;
+	display: block; /* this gives the link block properties causing it to fill the whole LI containing it. This causes the entire area to react to a mouse click. */
+	text-decoration: none;
+	background: #8090AB;
+	color: #000;
+}
+ 	
+.nav a:hover, .nav a:active, .nav a:focus { /* this changes the background and text color for both mouse and keyboard navigators */
+	background: #6F7D94;
+	color: #FFF;
+}

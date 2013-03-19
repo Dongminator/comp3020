@@ -1,6 +1,61 @@
+var _ipinfodbAPIKey = "1902d940963f8a010cda2909819504d60670e7f129b8641eb0b620d1aac1f4c4";
+var loginButton;
 $(document).ready(function(){
-	$( "button" ).button();
+	ipToLocation();
 });
+
+function initialize(center) {
+	var zoomLevel = 8;
+	if (!center) {
+		center = new google.maps.LatLng(0, 0);
+		zoomLevel = 2;
+	}
+	var mapOptions = {
+			draggable: false,
+			zoomControl: false,
+			scrollwheel: false, 
+			disableDoubleClickZoom: true,
+			center: center,
+			zoom: 12,
+			mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
+	var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+	
+	contentSetup();
+}
+
+function ipToLocation () {
+	var url = "http://api.ipinfodb.com/v3/ip-city/?key=" + _ipinfodbAPIKey + "&format=json&callback=dataCallback";
+	try {
+		script = document.createElement('script');
+		script.src = url;
+		document.body.appendChild(script);
+	} catch(err) {}
+	
+	dataCallback = function(data){
+		lat = data.latitude;
+		lon = data.longitude;
+	    if (lat && lon) {
+	    	initialize(new google.maps.LatLng(lat, lon));
+	    }
+	};
+}
+
+
+function contentSetup () {
+	loginButton = $('<button>').prependTo('#content').button({
+		label: "Sign in with Facebook"
+	}).click(function( event ) {
+		login();
+    }).css('margin', '20px auto 10px auto').css('width', '350px');;
+
+	$('#leftInfo').css('float', 'left').css('margin', '0px 0px 0px 10px');
+	$('#rightInfo').css('float', 'right').css('margin', '0px 10px 0px 0px');
+	
+	var newSize = $(window).height()*100/610;
+	$('p').css('font-size', newSize + "%");
+}
+
 
 
 window.fbAsyncInit = function() {
@@ -27,14 +82,12 @@ window.fbAsyncInit = function() {
 	FB.Event.subscribe('auth.login', function(response) {
 		window.location = "/home";
 	});
-	
 };
 
 function login() {
 	FB.login(function(response) {
 		if (response.authResponse) {
 			// connected
-			testAPI();
 		} else {
 			// cancelled
 		}
@@ -43,13 +96,6 @@ function login() {
 	/*
 	 * read_friendlists : read friend list.
 	 */
-}
-
-function testAPI() {
-	console.log('Welcome!  Fetching your information.... ');
-	FB.api('/me', function(response) {
-		console.log('Good to see you, ' + response.name + '.');
-	});
 }
 
 // Load the SDK Asynchronously
@@ -62,5 +108,8 @@ function testAPI() {
 }(document));
 
 
-
+$(window).resize(function() {
+	var newSize = $(window).height()*100/610;
+	$('p').css('font-size', newSize + "%");
+});
 
