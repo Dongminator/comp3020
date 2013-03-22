@@ -86,3 +86,8 @@
 .highlightedFriend, .highlightedRoute {
     background-color: #BDBDBD;
 }
+
+/* Hide all dialog close button */
+.ui-dialog-titlebar-close {
+  visibility: hidden;
+}

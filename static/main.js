@@ -6,6 +6,12 @@ var access_token;
 var sNName = "Facebook";
 var sNId = "";
 
+var SelectedAlbumIds = new Array();
+var AllAlbumPhotos = new Array();
+var SelectedPhotos = new Array();
+var SelectedPhotosWithoutGPS = new Array();
+
+
 $(document).ready(function(){
 	$( "button" ).button();
 	$( "#tabs" ).tabs();
@@ -143,26 +149,26 @@ function upload_photo () {
 //	gm_place_autocomplete();
 //}
 
-function get_album_ids(parsedDate, callback){
-	var albums_updated_after_parsedDate = new Array();
-
-	FB.api('/me?fields=albums', function(response) {
-
-		var data_array = response.albums.data;
-		var length = data_array.length,
-		element = null;
-		for (var i = 0; i < length; i++) {
-			element = data_array[i];
-			date = element.updated_time;
-			var update_time_in_milliseconds = Date.parse(date);
-			if (update_time_in_milliseconds > parsedDate) { // photo date is after 12.31
-				albums_updated_after_parsedDate.push(element.id);
-			}
-		}
-		$('#loading_dialog').dialog( "close" );
-		callback(albums_updated_after_parsedDate, parsedDate);// album_selection_dialog
-	});
-}
+//function get_album_ids(parsedDate, callback){
+//	var albums_updated_after_parsedDate = new Array();
+//
+//	FB.api('/me?fields=albums', function(response) {
+//
+//		var data_array = response.albums.data;
+//		var length = data_array.length,
+//		element = null;
+//		for (var i = 0; i < length; i++) {
+//			element = data_array[i];
+//			date = element.updated_time;
+//			var update_time_in_milliseconds = Date.parse(date);
+//			if (update_time_in_milliseconds > parsedDate) { // photo date is after 12.31
+//				albums_updated_after_parsedDate.push(element.id);
+//			}
+//		}
+//		$('#loading_dialog').dialog( "close" );
+//		callback(albums_updated_after_parsedDate, parsedDate);// album_selection_dialog
+//	});
+//}
 
 var allAlbumIds = new Array();
 function getAllAlbumsIds (url, callback) {
@@ -190,16 +196,27 @@ function getAllAlbumsIds (url, callback) {
 }
 
 function album_selection_dialog (album_id_array, parsedDate) {
-	var selected_album_ids = new Array();
 	$('#loading_dialog').dialog( "close" );
 	$("#facebook_album_selection_dialog").dialog({ 
+		closeOnEscape: false,
 		width: 1400,
 		height: 600,
 		draggable: false,
 		buttons: {
 			Next: function(){
+				$('#select_album_form').find('.highlighted').each(function(){
+					SelectedAlbumIds.push( $(this).attr('data-albumId') );
+				});
+				if (SelectedAlbumIds.length === 0) {
+					dialog_alert("chooseAtLeastOneAlbum", "Please choose at least one album.");
+				} else {
+					$( this ).dialog( "close" ); // Close dialog
+					photo_selection_dialog(SelectedAlbumIds, parsedDate);
+				}
+			}, 
+			Cancel: function(){
 				$( this ).dialog( "close" ); // Close dialog
-				photo_selection_dialog(selected_album_ids, parsedDate);
+				clearAllDialogContentAndVariable();
 			}
 		}
 	});
@@ -235,16 +252,9 @@ function album_selection_dialog (album_id_array, parsedDate) {
 	}
 
 	$('#select_album_form img').click(function() {
-		var selected_album_id = $(this).attr('data-albumId');
-		// Set the form value
-		if (selected_album_ids.indexOf(selected_album_id) !== -1) {
-			var index = selected_album_ids.indexOf(selected_album_id);
-			selected_album_ids.splice(index, 1);
-			// Unhighlight all the images
+		if ( $(this).hasClass('highlighted') ) {
 			$(this).removeClass('highlighted');
 		} else {
-			selected_album_ids.push(selected_album_id);
-			// Highlight the newly selected image
 			$(this).addClass('highlighted');
 		}
 	});
@@ -258,14 +268,19 @@ function photo_selection_dialog (albumIds, parsedDate) {
 	// TODO validate at least one album is chosen.
 	if (albumIds.length === 1) {
 		// Display photos in FB.api callback function.
-		fb_get_photos('/' + albumIds[0] + '?fields=photos', parsedDate);
+		AllAlbumPhotos.push( new Array() );
+		SelectedPhotos.push( new Array() );
+		fb_get_photos('/' + albumIds[0] + '?fields=photos', parsedDate, 0);
 	} else {
-//		console.log ("More than one albums are chosen:" + albumIds);
+		AllAlbumPhotos.push( new Array() );
+		SelectedPhotos.push( new Array() );
+		fb_get_photos('/' + albumIds[0] + '?fields=photos', parsedDate, 0);
 	}
 }
 
 function sc_select_dialog (parsedDate) {
 	$("#fb_sc_select_dialog").dialog({ 
+		closeOnEscape: false,
 		width: 1200,
 		height: 600,
 		draggable: false,
@@ -280,6 +295,8 @@ function sc_select_dialog (parsedDate) {
 				
 				getSCLocation(editRouteId, selected_statusCheckin);
 				addEditRouteNameText();
+				
+				clearAllDialogContentAndVariable();
 			}
 		}
 	});
@@ -333,7 +350,7 @@ function addEditRouteNameText () {
 }
 
 
-function fb_get_photos (url, parsedDate) {
+function fb_get_photos (url, parsedDate, albumIndex) {
 	FB.api(url, function(response) {
 		var photos = null;
 		if (response.photos) {
@@ -348,6 +365,7 @@ function fb_get_photos (url, parsedDate) {
 			var created_time_millisecond = Date.parse(created_time);
 			if (created_time_millisecond > parsedDate) { // Store ID.
 				curr_album_photos_count_after_given_date++ ;
+				AllAlbumPhotos[albumIndex].push(photo.id);
 				curr_album_photos_ids_after_given_date.push(photo.id);
 			}
 		}
@@ -356,20 +374,32 @@ function fb_get_photos (url, parsedDate) {
 		if (response.photos) { // first page of photos. 
 			if(response.photos.paging && response.photos.paging.next) {
 				new_url = response.photos.paging.next.substring(26);// 26: https://graph.facebook.com/
-//				console.log(new_url);
-				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+				fb_get_photos(new_url, parsedDate, albumIndex); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			} else {
 				// No more photos
 				displayPhotos ();
+				if (SelectedAlbumIds.length > 1) {
+					var nextAlbum = albumIndex + 1;
+					if (SelectedAlbumIds[nextAlbum]) {
+						AllAlbumPhotos.push( new Array() );
+						fb_get_photos ('/' + SelectedAlbumIds[nextAlbum] + '?fields=photos', parsedDate, nextAlbum);
+					}
+				}
 			}
 		} else { // not first page -> 2,3,4... pages. Only have one data field. 
 			if (response.paging.next) {
 				new_url = response.paging.next.substring(26);
-				console.log(new_url);
-				fb_get_photos(new_url, parsedDate); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
+				fb_get_photos(new_url, parsedDate, albumIndex); // TODO https://graph.facebook.com/10200193006046072/photos?limit=25&after=MTAyMDAxOTMwMjUyODY1NTM=
 			} else {
 				// No more photos
 				displayPhotos ();
+				if (SelectedAlbumIds.length > 1) {
+					var nextAlbum = albumIndex + 1;
+					if (SelectedAlbumIds[nextAlbum]) {
+						AllAlbumPhotos.push( new Array() );
+						fb_get_photos ('/' + SelectedAlbumIds[nextAlbum] + '?fields=photos', parsedDate, nextAlbum);
+					}
+				}
 			}
 		}
 	});
@@ -517,42 +547,78 @@ var selected_photos = new Array(); // In the select photo dialog, the photos sel
 var photo_location_table = {};
 var photoIdUrl = {};
 function displayPhotos () {
+	var parentDiv;
+	if ( $("#facebook_photo_selection_dialog").length === 0 ){
+		parentDiv = $('<div>').attr('id', 'facebook_photo_selection_dialog').addClass('dialog').attr('title', 'Photos from Facebook').appendTo('body');
+	} else {
+		parentDiv = $('#facebook_photo_selection_dialog');
+	}
+	
+	var images_per_row = 5;
+	
 	$('#loading_dialog').dialog( "close" );
 	$("#facebook_photo_selection_dialog").dialog({ 
+		closeOnEscape: false,
 		width: 1200,
 		height: 600,
 		draggable: false,
 		buttons: {
 			Next: function(){
 				$( this ).dialog( "close" ); // Close dialog
+				$('#facebook_photo_selection_dialog').find('.highlighted').each(function(){
+					SelectedAlbumIds.push( $(this).attr('data-photoId') );
+					selected_photos.push($(this).attr('data-photoId'));
+				});
+				console.log(selected_photos);
 				check_photo_location();
 				dialog_photos_without_gps();
+			}, 
+			Cancel: function(){
+				$( this ).dialog( "close" ); // Close dialog
+				clearAllDialogContentAndVariable();
 			}
 		}
 	});
 	
-	var images_per_row = 5;
-
-	$('#facebook_photo_selection_dialog').append("<a href=\"javascript:void(0)\" onClick=\"selectAllPhotos('facebook_photo_selection_dialog')\">Select All</a> ");
-
-	var photos_table = $('<table></table>').attr('id', 'photos_table'); // Create a table
-
-	$('#facebook_photo_selection_dialog').append(photos_table); // Append table to the div
-
-	var photos_table2 = document.getElementById("photos_table");
-	var row;
-	// Load photos from this album
-
-	// Get number of photos to be displayed. I.E. store IDs of photos.
-	// After that, append photos.
-	if (curr_album_photos_count_after_given_date === curr_album_photos_ids_after_given_date.length) {
-//		console.log("number equal");
+	var currAlbumIndex = AllAlbumPhotos.length - 1;
+	var currAlbumId = SelectedAlbumIds[currAlbumIndex];
+	
+	var parentOfTable;
+	if (SelectedAlbumIds.length === 1) {
+		parentOfTable = parentDiv;
+		parentDiv.append("<a href=\"javascript:void(0)\" onClick=\"selectAllPhotos('facebook_photo_selection_dialog')\">Select All</a> ");
 	} else {
-//		console.log("number !equal");
+		// Display photos at AllAlbumPhotos.length - 1
+		var divId = 'select-album-' + currAlbumId;
+		var albumDiv = $('<div>').attr('id', divId).appendTo(parentDiv);
+		var titleBarDiv = $('<div>').appendTo(albumDiv).css('text-align', 'center').css('background-color', 'grey');
+		var tableDiv = $('<div>').appendTo(albumDiv);
+		parentOfTable = tableDiv;
+		var toggleButton = $('<button>').css('float', 'left').appendTo(titleBarDiv).button({
+			icons: {
+                primary: "ui-icon-triangle-1-s"
+            },
+            text: false
+		}).click(function( event ) {
+			tableDiv.toggle( 'Blind');
+	    });
+		
+		var albumTitle = $('<p>').text(" ").css('display', 'inline').appendTo(titleBarDiv);
+		FB.api('/' + currAlbumId, function(response) {
+			var fb_album_name = response.name;
+			albumTitle.text(fb_album_name);
+		});
+		var selectAllLink = $('<a>').attr('href', 'javascript:void(0)').attr('onClick', 'selectAllPhotos("' + divId + '")').text("Select All").css('float', 'right').appendTo(titleBarDiv);
 	}
+	
+	// Append table
+	var photos_table = $('<table></table>').attr('id', 'album-photos-table-' + currAlbumId); // Create a table
+	parentOfTable.append(photos_table); // Append table to the div
+	var photos_table2 = document.getElementById('album-photos-table-' + currAlbumId);
+	var row;
 
-	for (var i = 0; i < curr_album_photos_count_after_given_date; i++) {
-		var photo_id = curr_album_photos_ids_after_given_date[i];
+	for (var i = 0; i < AllAlbumPhotos[currAlbumIndex].length; i++) {
+		var photo_id = AllAlbumPhotos[currAlbumIndex][i];
 		if (i%images_per_row === 0) {
 			row = photos_table2.insertRow(-1);// Insert a row at last position
 		}
@@ -570,43 +636,23 @@ function displayPhotos () {
 			if (response.place) {
 				photo_location_table[fb_picture_id] = response.place;
 			}
-			$('#photos_table').find("[data-photoId='" + fb_picture_id + "']").attr('src', fb_picture_url);
+			$('#album-photos-table-' + currAlbumId).find("[data-photoId='" + fb_picture_id + "']").attr('src', fb_picture_url);
 		});
-
 	}
-
+	
 	// Add click listener
-	$('#photos_table img').click(function() {
-		var selected_photo_id = $(this).attr('data-photoId');
-		// Set the form value
-		if (selected_photos.indexOf(selected_photo_id) !== -1) { // Photo exists in array -> remove.
-			var index = selected_photos.indexOf(selected_photo_id);
-			selected_photos.splice(index, 1);
-
-			// Unhighlight all the images
+	$('#album-photos-table-' + currAlbumId + ' img').click(function() {
+		if ( $(this).hasClass('highlighted')) {
 			$(this).removeClass('highlighted');
 		} else {
-			selected_photos.push(selected_photo_id);
-
-			// Highlight the newly selected image
 			$(this).addClass('highlighted');
 		}
 	});
 }
 
 function selectAllPhotos (div_name) {
-//	console.log(div_name);
 	var select = '#' + div_name + ' img';
 	$('#' + div_name + ' img').addClass('highlighted');
-
-//	console.log(selected_photos.length);
-	selected_photos.splice(0, selected_photos.length);
-//	console.log(selected_photos.length);
-	$('#' + div_name + ' img').each ( function () {
-		selected_photos.push( $(this).data("photoid").toString() ); // Note: store string.
-	});
-//	console.log(selected_photos.length);
-//	console.log(selected_photos);
 }
 
 var editRouteId;
@@ -636,6 +682,7 @@ function dialog_photos_without_gps () {
 	var dialogDiv = $('<div></div>').attr('id', 'photos_without_gps_dialog').attr('class', 'dialog').attr('title', 'Add loation information to photos');
 	$('body').append(dialogDiv);
 	$("#photos_without_gps_dialog").dialog({ 
+		closeOnEscape: false,
 		width: dialogWidth,
 		height: 600,
 		draggable: false,
@@ -673,6 +720,10 @@ function dialog_photos_without_gps () {
 				editRouteId = new Date().getTime() + "";
 				gm_display_route(via_places, sNId, sNName, editRouteId);
 				sc_select_dialog(0);
+			}, 
+			Cancel: function(){
+				$( this ).dialog( "close" ); // Close dialog
+				clearAllDialogContentAndVariable();
 			}
 			
 		}
@@ -746,28 +797,6 @@ function getImageTag(pId, callback, marker) {
 
 function selectAllStatusCheckin (div_name) {
 	$('#' + div_name + ' li').addClass('highlighted');
-}
-
-
-function edit_via_points () {
-	$("#facebook_photo_confirm_dialog").dialog({ 
-		width: 500,
-		height: 300,
-		draggable: true,
-		buttons: {
-			Next: function(){
-				$( this ).dialog( "close" ); // Close dialog
-			}
-		}
-	});
-	document.getElementById('start_point_td').textContent = start_place.formatted_address; // From googlemap.js
-
-	var via_points_edit_table = document.getElementById("via_points_edit_table");
-	var row = via_points_edit_table.insertRow(-1);
-	var cell1 = row.insertCell(0);
-	var cell2 = row.insertCell(1);
-	cell1.innerHTML = "Via:";
-	cell2.innerHTML = "LOCATION FROM FACEBOOK PHOTO";
 }
 
 
@@ -955,3 +984,46 @@ function populateMyRoutes (id, sn) {
 	});
 }
 
+
+function dialog_alert (id, msg) {
+	var alertDialog = $("<div>").attr('id', id);
+	var alertContent = $("<p>").text(msg).appendTo(alertDialog);
+	
+	alertDialog.dialog({
+		width: 'auto',
+	});
+}
+
+
+function clearAllDialogContentAndVariable () {
+	$('#album_cover_photo_table').empty();
+	$('#facebook_photo_selection_dialog').remove();
+	$('#photos_without_gps_dialog').remove();
+	$('#fb_sc_select_dialog').empty();
+	
+	allAlbumIds = [];
+	AllAlbumPhotos = [];
+	checkin_next_url = "";
+	curr_album_photos_count_after_given_date = 0;
+	curr_album_photos_ids_after_given_date = [];
+	
+//	main.js.editRouteId
+//	main.js.FbSmallLogoTag
+	id_time = [];
+	photo_location_table = [];
+	photoIdUrl = [];
+	sc_list_ulPopulateDone = false;
+	sc_objs = [];
+	sc_sum = 0;
+	selected_photos = [];
+	selected_photos_without_gps = [];
+	selected_statusCheckin = [];
+	SelectedAlbumIds = [];
+	SelectedPhotos = [];
+	SelectedPhotosWithoutGPS = [];
+	selectedRoutes
+//	main.js.sNId
+//	main.js.sNName
+	status_next_url = "";
+	via_places = [];
+}
