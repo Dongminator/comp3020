@@ -32,16 +32,21 @@ function populateFriendList () {
 		var invite_friend = $('<p></p>').attr('id', 'invite_friend').text("You have no friend using the application").appendTo('#friend_div'); // Create a ul tag
 		// TODO invite friends to use the application
 	} else {
-		var unordered_list = $('<ul></ul>').attr('id', 'friend_list').attr('class', 'ipList tabDiv').appendTo('#friend_div'); // Create a ul tag
+		var heightOfDiv = $('#tabs').height();
+		var heightOfButton = 36;
+		var heightOfScroll = heightOfDiv - heightOfButton - 100;
+		var unordered_list = $('<ul></ul>').attr('id', 'friend_list').attr('class', 'ipList tabDiv').appendTo('#friend_div').css('height', heightOfScroll); // Create a ul tag
+		$(window).resize(function() {
+			heightOfDiv = $('#tabs').height();
+			heightOfScroll = heightOfDiv - heightOfButton - 100;
+			unordered_list.css('height', heightOfScroll)
+		});
 		for (var i = 0; i < friend_ids.length; i++) {
 			var li = $('<li/>').attr('data-friendId', friend_ids[i]).attr('data-api', 'Facebook').appendTo('#friend_list');
-//			var a = $('<a></a>').attr('href', "javascript:void(0)").attr('onclick', displayFriendRoute(friend_ids[i])).attr('style', "display:block");
-//			li.append(a);
 			li.append("<img src='' height='50px'></img>");
-			
 			li.append("<p>" + friend_names[i] + "</p>");
 			
-			$('#friend_list li').click(function() {
+			li.click(function() {
 				var selectedId = $(this).attr('data-friendid');
 				if (selectedFriendIds.indexOf(selectedId) !== -1) {
 					var index = selectedFriendIds.indexOf(selectedId);
