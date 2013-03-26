@@ -204,9 +204,10 @@ function album_selection_dialog (album_id_array, parsedDate) {
 		draggable: false,
 		buttons: {
 			Next: function(){
-				$('#select_album_form').find('.highlighted').each(function(){
+				$('#select_album_form').find('.highlighted').find('img').each(function(){
 					SelectedAlbumIds.push( $(this).attr('data-albumId') );
 				});
+				console.log(SelectedAlbumIds);
 				if (SelectedAlbumIds.length === 0) {
 					dialog_alert("chooseAtLeastOneAlbum", "Please choose at least one album.");
 				} else {
@@ -222,42 +223,72 @@ function album_selection_dialog (album_id_array, parsedDate) {
 	});
 
 	var number_of_albums = album_id_array.length;
-	var images_each_row = 4; // TODO This need to be dynamically generated given the width of the window. 
-
-	var cover_photo_table = document.getElementById("album_cover_photo_table");
 	var row;
+	var images_each_row = 4; // TODO This need to be dynamically generated given the width of the window.
+	var cover_photo_table = document.getElementById("album_cover_photo_table");
+	
 	for (var i = 0; i < number_of_albums; i++) {
 		var curr_album_id = album_id_array[i];
-		var curr_album_cover_url = "";
-
-		FB.api('/' + curr_album_id, function(response) {
-			var album_name = response.name;
-			var album_cover_id = response.cover_photo;
-			var album_count = response.count;
-			var album_id = response.id;
-
-			FB.api('/' + album_cover_id, function(response) {
-				var images = response.images;
-				curr_album_cover_url = images[5].source;
-				$('#select_album_form').find("[data-albumId='" + album_id + "']").attr('src', curr_album_cover_url);
-			});
-		});
-
-		// Generate HTML
 		if (i%images_each_row === 0) {
 			row = cover_photo_table.insertRow(-1);// Insert a row at last position
 		}
 		var cell1 = row.insertCell(i%images_each_row);
-		cell1.innerHTML = "<img src='' data-albumId=\"" + album_id_array[i] + "\">";
+		fb_getCoverPhoto(i, curr_album_id, cell1);
+		console.log($('#select_album_form td:last'));
+		$('#select_album_form td:last').click(function() {
+			if ( $(this).hasClass('highlighted') ) {
+				$(this).removeClass('highlighted');
+			} else {
+				$(this).addClass('highlighted');
+			}
+		});
 	}
+}
 
-	$('#select_album_form img').click(function() {
-		if ( $(this).hasClass('highlighted') ) {
-			$(this).removeClass('highlighted');
-		} else {
-			$(this).addClass('highlighted');
-		}
+function fb_getCoverPhoto(index, albumId, cell){
+	FB.api('/' + albumId, function(response) {
+		var album_name = response.name;
+		var album_cover_id = response.cover_photo;
+		var album_count = response.count;
+		var album_id = response.id;
+		FB.api('/' + album_cover_id, function(response) {
+			var images = response.images;
+			var photoHeight = response.height;
+			var photoWidth = response.width;
+			var photoId = response.id;
+			var curr_album_cover_url = response.source;
+			$('#select_album_form').find("[data-albumId='" + album_id + "']").attr('src', curr_album_cover_url);
+			populatePhotoTable(index, photoHeight, photoWidth, curr_album_cover_url, album_id, cell, "data-albumId", $("#album_cover_photo_table").find("[data-albumId='" + photoId + "']"));
+		});
 	});
+}
+
+function populatePhotoTable (index, photoHeight, photoWidth, albumUrl, photoId, cell, dataAttr, domObj) {
+	// Generate HTML
+//	cell1.innerHTML = "<img src='' data-albumId=\"" + album_id_array[i] + "\">";
+	var dialogWidth = 1400;
+	var imgDisplayW, imgDisplayH;
+	var imgWH = dialogWidth/4 - 20; // if dialogWidth if 1200, imgWH = 285
+	var margin = "";
+	if (photoHeight > photoWidth) {
+		imgDisplayW = imgWH;
+		imgDisplayH = imgDisplayW*photoHeight/photoWidth;
+		margin = (0 - (imgDisplayH - imgDisplayW)/2) + 'px 0px 0px 0px';
+	} else {
+		imgDisplayH = imgWH;
+		imgDisplayW = imgDisplayH*photoWidth/photoHeight;
+		margin = '0px 0px 0px ' + (0 - (imgDisplayW - imgDisplayH)/2) + 'px';
+	}
+	
+	cell.innerHTML = "<div class='crop'><img src='" + albumUrl + "' " +
+			dataAttr + "='" + photoId + "' " +
+			"width='" + imgDisplayW +"' " +
+			"height='" + imgDisplayH + "' " + 
+			"></div>" + 
+			"";
+	
+	$('.crop').css('width' , imgWH).css('height', imgWH);
+	domObj.css('margin', margin);
 }
 
 
@@ -352,6 +383,7 @@ function addEditRouteNameText () {
 
 function fb_get_photos (url, parsedDate, albumIndex) {
 	FB.api(url, function(response) {
+		console.log(url);
 		var photos = null;
 		if (response.photos) {
 			photos = response.photos.data;
@@ -404,6 +436,7 @@ function fb_get_photos (url, parsedDate, albumIndex) {
 		}
 	});
 }
+
 
 var sc_list_ulPopulateDone = false;
 var sc_objs = new Array();
@@ -747,32 +780,34 @@ function dialog_photos_without_gps () {
 		}
 		var cell1 = row.insertCell(i%images_each_row);
 		
-		var imgDisplayW, imgDisplayH;
-		var imgWH = dialogWidth/4 - 20; // if dialogWidth if 1200, imgWH = 285
-		var margin = "";
-		if (photoHeight > photoWidth) {
-			imgDisplayW = imgWH;
-			imgDisplayH = imgDisplayW*photoHeight/photoWidth;
-			margin = (0 - (imgDisplayH - imgDisplayW)/2) + 'px 0px 0px 0px';
-		} else {
-			imgDisplayH = imgWH;
-			imgDisplayW = imgDisplayH*photoWidth/photoHeight;
-			margin = '0px 0px 0px ' + (0 - (imgDisplayW - imgDisplayH)/2) + 'px';
-		}
 		
-		cell1.innerHTML = "<div class='crop'><img src='" + photoUrl + "' " +
-				"data-photoId='" + photoId + "' " +
-				"width='" + imgDisplayW +"' " +
-				"height='" + imgDisplayH + "' " + 
-				"></div>" + 
-				"";
+		populatePhotoTable (i, photoHeight, photoWidth, photoUrl, photoId, cell1, "data-photoId", $("#photos_without_gps_table").find("[data-photoId='" + photoId + "']"));
+//		var imgDisplayW, imgDisplayH;
+//		var imgWH = dialogWidth/4 - 20; // if dialogWidth if 1200, imgWH = 285
+//		var margin = "";
+//		if (photoHeight > photoWidth) {
+//			imgDisplayW = imgWH;
+//			imgDisplayH = imgDisplayW*photoHeight/photoWidth;
+//			margin = (0 - (imgDisplayH - imgDisplayW)/2) + 'px 0px 0px 0px';
+//		} else {
+//			imgDisplayH = imgWH;
+//			imgDisplayW = imgDisplayH*photoWidth/photoHeight;
+//			margin = '0px 0px 0px ' + (0 - (imgDisplayW - imgDisplayH)/2) + 'px';
+//		}
+//		
+//		cell1.innerHTML = "<div class='crop'><img src='" + photoUrl + "' " +
+//				"data-photoId='" + photoId + "' " +
+//				"width='" + imgDisplayW +"' " +
+//				"height='" + imgDisplayH + "' " + 
+//				"></div>" + 
+//				"";
 		var inputId = "location_of_" + photoId;
 		var input = $('<input>').attr('type', 'text').attr('name', photoId).attr('id', inputId);
 		cell1.innerHTML = cell1.innerHTML + $('<div>').append(input.clone()).html();
 		gm_place_autocomplete(inputId);
-		
-		$('.crop').css('width' , imgWH).css('height', imgWH);
-		$("#photos_without_gps_table").find("[data-photoId='" + photoId + "']").css('margin', margin);
+//		
+//		$('.crop').css('width' , imgWH).css('height', imgWH);
+//		$("#photos_without_gps_table").find("[data-photoId='" + photoId + "']").css('margin', margin);
 	}
 	
 	// Add click listener
