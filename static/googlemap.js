@@ -256,7 +256,7 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 
 
 // RouteType: create, or display
-function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex) {
+function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode) {
 	var wpNumber = 0;
 	if (rStart || rEnd) {
 		wpNumber = waypoints.length + 1;
@@ -264,7 +264,7 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, rout
 		wpNumber = waypoints.length - 1;
 	}
 	if (i < wpNumber) {
-		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
+		var tempfunction = temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode);
 		setTimeout(tempfunction, pause_time);
 	}
 }
@@ -272,7 +272,7 @@ function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, rout
 var overlays = new Array();
 
 
-function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex) {
+function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode) {
 	return function () {
 		var start_place_string;
 		var end_place_string;
@@ -412,7 +412,6 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 											console.log(route);
 											
 											result[routeIndex] = route;
-											
 										}
 									}
 									
@@ -426,8 +425,6 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 					}
 				}
 				// Store item into array.
-				
-				
 
 			});
 		}
@@ -435,13 +432,13 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 		var request = {
 				origin:start_place_string,
 				destination:end_place_string,
-				travelMode: google.maps.TravelMode.DRIVING
+				travelMode: travelMode ? travelMode : google.maps.TravelMode.DRIVING
 		};
 		
 		if (waypoints[i] === waypoints[i + 1]) {
 			gm_displayItems(i, waypoints, itemIds, timestamp);
 			i++;
-			temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
+			temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode);
 		} else {
 			directionsService.route(request, function(result, status) {
 				if (status == google.maps.DirectionsStatus.OK) {
@@ -469,12 +466,11 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 						gm_displayItems(i, waypoints, itemIds, timestamp);
 					}
 					i++;
-					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
+					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, null);
 				} else if (status == google.maps.DirectionsStatus.ZERO_RESULTS) {
-					i++;
-					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);
+					temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, google.maps.TravelMode.WALKING);
 				} else if (status == google.maps.DirectionsStatus.OVER_QUERY_LIMIT) {
-					temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex);// TODO 500 can be optimized. if too small, useful query will run only every second. 
+					temp2(i, waypoints, 500, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode);// TODO 500 can be optimized. if too small, useful query will run only every second. 
 				}
 			});
 		}
@@ -625,15 +621,6 @@ function gm_displayItems_callback (itemId, url, description, type, indexOfDispla
 			addListenersToMarkers (routesMarkers[indexOfDisplayedRoute][i], i, indexOfDisplayedRoute);
 		}
 	}
-
-	// infowindow:
-////	var contentString = $('<img />').attr('src', url).data('api', type).data('photoId', itemId).attr('height', height).attr('width', width);
-//	var contentString = '<div style="width: ' + width + 'px; height:' +height + 'px;"><img src="' + url + '"' + ' data-api="' + type + '"' + ' data-photoId="' + itemId + '"' +'></div>';
-////	<a id="fancybox-manual-c" href="javascript:;"><img src="5_s.jpg" alt="" /></a><
-//	var infowindow = new google.maps.InfoWindow({
-//	    content: contentString,
-//	    maxWidth: 1000
-//	});
 }
 
 /*
@@ -641,9 +628,7 @@ function gm_displayItems_callback (itemId, url, description, type, indexOfDispla
  * See Google Map Events tutorial about 'Using Closure in Event Listeners': https://developers.google.com/maps/documentation/javascript/events#EventClosures
  */
 function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the index of the marker
-	console.log("add listenenr " + i);
 	google.maps.event.addListener(marker, 'click', function(event) {
-		console.log('clicked');
 		var objs = new Array();
 		if (curr_infoWindow) {
 			curr_infoWindow.close();
@@ -652,12 +637,8 @@ function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the i
 //		curr_infoWindow = infowindow;
 		for (var j = 0; j < routesItems[indexOfDisplayedRoute][i].length; j ++ ) {
 			objs.push(routesItems[indexOfDisplayedRoute][i][j]);
-			console.log(i + " " + j);
-			console.log(routesItems[indexOfDisplayedRoute][i][j]);
-			
 		}
 		
-		console.log(objs);
 		$.fancybox.open(objs, {
 			helpers : {
 				thumbs : {
