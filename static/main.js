@@ -330,6 +330,25 @@ function sc_select_dialog (parsedDate) {
 	// Get status & check-ins
 	fb_get_statusOrCheckin('/me?fields=statuses.limit(10)', "status");// parsedDate = 1352160000000 -> Tue Nov 06 2012 00:00:00 GMT+0000 (GMT Standard Time)
 	fb_get_statusOrCheckin('/me?fields=checkins.limit(10)', "checkin");
+	
+	var buttonDiv = $('<div>').css('text-align', 'center').appendTo('#fb_sc_select_dialog');
+	$('<button>', {
+		text: 'Load more status and check-ins',
+		click: function () {
+			if (!status_next_url && !checkin_next_url) {
+				$(this).button("option", "disabled", "true");
+				$(this).button("option", "label", "No more photo and check-in");
+				return;
+			} else {
+				if (status_next_url) {
+					fb_get_statusOrCheckin(status_next_url, "status");
+				}
+				if (checkin_next_url) {
+					fb_get_statusOrCheckin(checkin_next_url, "checkin");
+				}
+			}
+		}
+	}).appendTo(buttonDiv).css('width', '100%').button();
 }
 
 function addEditRouteNameText () {
@@ -435,10 +454,26 @@ var status_next_url;
 var checkin_next_url;
 function fb_get_statusOrCheckin (url, option) {
 	FB.api(url, function(response) {
-		var items = null;
+		var items;
 		if (response.data) {
 			items = response.data;
-			checkin_next_url = response.paging.next.substring(26);
+			if (option === 'status') {
+				if (response.paging && response.paging.next) {
+					status_next_url = response.paging.next.substring(26);
+				} else {
+					status_next_url = "";
+				}
+			} else {
+				if (response.paging && response.paging.next) {
+					checkin_next_url = response.paging.next.substring(26);
+				} else {
+					checkin_next_url = "";
+					if (!status_next_url) {
+						$("button span:contains('Load more status and check-ins')").parent().button("option", "disabled", "true");
+						$("button span:contains('Load more status and check-ins')").parent().button("option", "label", "No more photo and check-in");
+					}
+				}
+			}
 		} else {
 			if (option === 'status') {
 				items = response.statuses.data;
@@ -448,6 +483,7 @@ function fb_get_statusOrCheckin (url, option) {
 				checkin_next_url = response.checkins.paging.next.substring(26);
 			}
 		}
+		
 		for (var i = 0; i < items.length; i++) {
 			var item = items[i];
 			var fb_date = item.updated_time ? fb_date = item.updated_time : fb_date = item.created_time;
