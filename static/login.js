@@ -73,7 +73,6 @@ function displayDefaultLocation (error) {
 //	};
 //}
 
-
 function contentSetup () {
 	loginButton = $('<button>').prependTo('#content').button({
 		label: "Sign in with Facebook"
@@ -90,8 +89,7 @@ function contentSetup () {
 function resizeContent () {
 	var contentButtonH2Height = $('.infoContent').offset().top - $('#content').offset().top;
 	var contentHeight = $('#content').height();
-	
-	var newSize = $(window).height()*100/610;
+	var newSize = $(window).height()*100/650;
 	if (newSize < 100) {
 		$('.infoContent').css('overflow-y', 'scroll').css('height', contentHeight - contentButtonH2Height);
 		$('p').css('font-size', '100%');
@@ -100,8 +98,6 @@ function resizeContent () {
 		$('p').css('font-size', newSize + "%");
 	}
 }
-
-
 
 window.fbAsyncInit = function() {
 	FB.init({
