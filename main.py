@@ -54,7 +54,13 @@ class HomePage(webapp2.RequestHandler):
 
         template = jinja_environment.get_template('home.html')
         self.response.out.write(template.render(template_values))
-# TODO: all the routes go here
+
+class TestingPage(webapp2.RequestHandler):
+    def get(self):
+        template_values = {}
+
+        template = jinja_environment.get_template('testing.html')
+        self.response.out.write(template.render(template_values))
     
 class Store(webapp2.RequestHandler): 
     def post(self):
@@ -198,12 +204,13 @@ class Delete(webapp2.RequestHandler):
             for p in points:
                 p.delete()
                 
-        
+
         
 app = WSGIApplication(
                       [('/', MainPage), 
                        ('/home', HomePage),
                        ('/login', MainPage),
+                       ('/testingAccount', TestingPage),
                        ('/store', Store),
                        ('/allRoute', Route),
                        ('/bound', Bound),

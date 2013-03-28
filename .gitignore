@@ -3,6 +3,8 @@
 #################
 .metadata/
 test/
+static/testingAccount.js
+
 *.pydevproject
 .project
 .metadata
