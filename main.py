@@ -61,6 +61,13 @@ class TestingPage(webapp2.RequestHandler):
 
         template = jinja_environment.get_template('testing.html')
         self.response.out.write(template.render(template_values))
+        
+# class QUnitTestingPage(webapp2.RequestHandler):
+#     def get(self):
+#         template_values = {}
+# 
+#         template = jinja_environment.get_template('../testing/test.html')
+#         self.response.out.write(template.render(template_values))
     
 class Store(webapp2.RequestHandler): 
     def post(self):
@@ -211,6 +218,7 @@ app = WSGIApplication(
                        ('/home', HomePage),
                        ('/login', MainPage),
                        ('/testingAccount', TestingPage),
+#                        ('/qunit', QUnitTestingPage),
                        ('/store', Store),
                        ('/allRoute', Route),
                        ('/bound', Bound),

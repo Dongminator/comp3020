@@ -623,7 +623,10 @@ function displayPhotos () {
 		draggable: false,
 		buttons: {
 			Next: function(){
-				$( this ).dialog( "close" ); // Close dialog
+				if ( $('#facebook_photo_selection_dialog').find('.highlighted').length < 2) {
+					// TODO bug #9
+				}
+				
 				$('#facebook_photo_selection_dialog').find('.highlighted').each(function(){
 					SelectedAlbumIds.push( $(this).find('img').attr('data-photoId') );
 					selected_photos.push($(this).find('img').attr('data-photoId'));
@@ -631,6 +634,8 @@ function displayPhotos () {
 				console.log(selected_photos);
 				check_photo_location();
 				dialog_photos_without_gps();
+				
+				$( this ).dialog( "close" ); // Close dialog
 			}, 
 			Cancel: function(){
 				$( this ).dialog( "close" ); // Close dialog

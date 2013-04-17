@@ -257,6 +257,16 @@ function gm_display_route (id_place_pairs, sNId, sNName, timestamp) {
 
 // RouteType: create, or display
 function temp2 (i, waypoints, pause_time, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode) {
+	if (waypoints.length === 1) {// Just show a marker. Bug #9
+		var latlon 
+		var markerLatLong = new google.maps.LatLng( waypoints[0].split(",")[0], waypoints[0].split(",")[1] );
+		var markerIcon = 'static/marker_blue.png';
+		marker = new google.maps.Marker({
+			position: markerLatLong,
+			map: map,
+			icon: markerIcon
+		});
+	}
 	var wpNumber = 0;
 	if (rStart || rEnd) {
 		wpNumber = waypoints.length + 1;
@@ -677,6 +687,7 @@ function gm_displayAllRoute (sNId, sNName) {
 		if (numberOfRoutes === 0) {
 			console.log("No route.");
 		} else {
+			console.log(numberOfRoutes + " route(s) being loaded...");
 			for (var i = 0; i < numberOfRoutes; i++) {
 				var route = routes[i];
 				var rTitle = route.title;
@@ -688,6 +699,7 @@ function gm_displayAllRoute (sNId, sNName) {
 				var rEnd = '';
 				
 				var via_places = new Array();
+				console.log("Loading route " + i + ". There are " + rWaypoints.length + " waypoint(s).");
 				for (var j = 0; j < rWaypoints.length; j++) {
 					var wp = rWaypoints[j];
 					via_places[wp.id] = wp.place;
