@@ -2,17 +2,11 @@ var friend_ids = new Array();
 var friend_names = new Array();
 function loadFriendList (url) {
 	FB.api(url, function(response) {
-		
 		var fb_friend = response.data;
 		var fb_paging = response.paging;
-		
 		for (var i = 0; i < fb_friend.length; i++) {
 			if (fb_friend[i].installed) {
 				friend_ids.push(fb_friend[i].id);
-				FB.api("/" + fb_friend[i].id, function(response) {
-					friend_names.push(response.name);
-					var li = $("#friend_list").find("[data-friendid='" + response.id + "']").find("p").text(response.name);
-				});
 			}
 		}
 		
@@ -21,9 +15,25 @@ function loadFriendList (url) {
 			new_url = response.paging.next.substring(26);
 			loadFriendList(new_url);
 		} else {
-			populateFriendList();
+			fb_getNameById (0);
+//			populateFriendList();
 		}
 	});
+}
+
+
+
+function fb_getNameById (index) {
+	if (index < friend_ids.length) {
+		FB.api("/" + friend_ids[index], function(response) {
+			friend_names.push(response.name);
+			index++;
+			fb_getNameById (index, friend_ids[index]);
+		});
+	} else {
+		document.getElementById("friend_div").removeChild(document.getElementById("loading_friend"));
+		populateFriendList();
+	}
 }
 
 var selectedFriendIds = new Array();

@@ -57,6 +57,8 @@ window.fbAsyncInit = function() {
 			});
 			
 			addSelectAllButton();
+			
+			$('<p></p>').attr('id', 'loading_friend').text("Loading your friend list...").appendTo('#friend_div');
 			loadFriendList('/me/friends?fields=installed');// in friend.js
 			
 			populateMyRoutes(sNId, 'Facebook');
