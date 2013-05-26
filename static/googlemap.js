@@ -634,10 +634,12 @@ function addListenersToMarkers (marker, i, indexOfDisplayedRoute) {// i is the i
 		}
 //		infowindow.open(map,marker);
 //		curr_infoWindow = infowindow;
+		console.log(routesItems[indexOfDisplayedRoute][i].length);
 		for (var j = 0; j < routesItems[indexOfDisplayedRoute][i].length; j ++ ) {
 			objs.push(routesItems[indexOfDisplayedRoute][i][j]);
 		}
 		
+		console.log(objs);
 		$.fancybox.open(objs, {
 			helpers : {
 				thumbs : {
@@ -669,9 +671,7 @@ function addListenersToPolyline (routePolyline, initialWeight, mouseOverWeight, 
 
 function gm_displayAllRoute (sNId, sNName) {
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
-		console.log(data);
 		var routes = JSON.parse(data);
-		
 		var numberOfRoutes = routes.length;
 		
 		if (numberOfRoutes === 0) {
