@@ -46,11 +46,6 @@ function gm_addHeatmapLayer (selectedFriendIds) {
 		var nw = new google.maps.LatLng(ne.lat(), sw.lng());
 		var se = new google.maps.LatLng(sw.lat(), ne.lng());
 		
-		console.log ("lonLeft:" + sw.lng());
-		console.log ("lonRight:" + ne.lng());
-		console.log ("latTop:" + ne.lat());
-		console.log ("latBot:" + sw.lat());
-		
 		$.post('/bound', { lonLeft:sw.lng(), lonRight:ne.lng(), latTop:ne.lat(), latBot:sw.lat(), friendList:JSON.stringify(selectedFriendIds)} , function(data) {
 			console.log('=====store=data===========');
 			console.log(data);
@@ -79,7 +74,6 @@ function gm_addHeatmapLayer (selectedFriendIds) {
 					var lat = event.latLng.Ya;
 					var lon = event.latLng.Za;
 					
-					console.log(lat + " " + lon);
 					gm_showInfoWindow(event.latLng);
 				});
 				f_changeHeatMapButtonText();
@@ -95,11 +89,9 @@ function gm_addHeatmapLayer (selectedFriendIds) {
 			var routeStamp = key.split(';')[0];
 			var routeComponent = key.split(';')[1];
 			if (parseInt(routeComponent) || parseInt(routeComponent) === 0) {
-				console.log(key);
 				var routePolyline = routes[key];
 				addListenersToPolyline (routePolyline, 3, 6, 3);
 			} else {
-				console.log(key);
 			}
 		}
 	}
@@ -334,11 +326,9 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 				var NbOrHb = directionDisplaydirections[Object.keys(directionDisplaydirections)[2]];
 				var newWP = NbOrHb.waypoints;
 				if (newWP) {
-					console.log(newWP);
 					// Remove this route.
 					var newWPLat = newWP[0].location[Object.keys(newWP[0].location)[0]];
 					var newWPLon = newWP[0].location[Object.keys(newWP[0].location)[1]];
-//					console.log(newWPLat + " " + newWPLon + " " + waypoints.length);
 					// Find the closest marker to this waypoint
 					var indexOfDisplayedRoute = routesDisplayed.indexOf(timestamp);
 					var closestMarker = findClosestPointToNewWaypoint(newWPLat, newWPLon, routesMarkers[indexOfDisplayedRoute]);
@@ -368,8 +358,6 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 						}
 						// j is the number of route stored in the route array. 'stamp;j'
 						for (var j = 0; j < numberOfItems - 1; j ++) {
-							console.log(routes[timestamp+";"+j]);
-							console.log(j + " " + numberOfItems);
 							if (routes[timestamp+";"+j] === directionsDisplay) {
 								// Create new waypoints and push start, new waypoint and end point.
 								var newWaypoints = new Array();
@@ -446,6 +434,7 @@ function temp (i, waypoints, rStart, rEnd, itemIds, timestamp, routeType, keySta
 		};
 		
 		if (waypoints[i] === waypoints[i + 1]) {
+			console.log("This and next point at the same locatoin.");
 			gm_displayItems(i, waypoints, itemIds, timestamp);
 			i++;
 			temp2(i, waypoints, 0, rStart, rEnd, itemIds, timestamp, routeType, keyStartIndex, travelMode);
@@ -609,7 +598,6 @@ function gm_displayItems (index, waypoints, itemIds, timestamp) {
 			// only need FB api to get image url. need to create marker here, not in the callback.
 			// fb callback needs to know where to put the image. 
 			var routeTimestamp = routesDisplayed[indexOfDisplayedRoute].split(':')[2];
-			console.log(routeTimestamp);
 			fb_getSC(curr_itemId, gm_displayStatus, routeTimestamp);
 		}
 	}
@@ -630,6 +618,7 @@ function gm_displayItems_callback (itemId, url, description, type, indexOfDispla
 			google.maps.event.clearListeners(routesMarkers[indexOfDisplayedRoute][i], 'click');// Remove old listener.
 			addListenersToMarkers (routesMarkers[indexOfDisplayedRoute][i], i, indexOfDisplayedRoute);
 		}
+	} else {
 	}
 }
 
@@ -680,6 +669,7 @@ function addListenersToPolyline (routePolyline, initialWeight, mouseOverWeight, 
 
 function gm_displayAllRoute (sNId, sNName) {
 	$.post('/allRoute', { sNId: sNId, sNName : sNName } , function(data) {
+		console.log(data);
 		var routes = JSON.parse(data);
 		
 		var numberOfRoutes = routes.length;
@@ -702,8 +692,12 @@ function gm_displayAllRoute (sNId, sNName) {
 				console.log("Loading route " + i + ". There are " + rWaypoints.length + " waypoint(s).");
 				for (var j = 0; j < rWaypoints.length; j++) {
 					var wp = rWaypoints[j];
-					via_places[wp.id] = wp.place;
-					itemIds.push(wp.api + ":" + wp.type + ":" + wp.id);
+					
+					if (wp.id) { // Changed on 26th May 2013. If wp.id does not exist, there may be something wrong...
+						via_places[wp.id] = wp.place;
+						itemIds.push(wp.api + ":" + wp.type + ":" + wp.id);
+					}
+					
 				}
 //				gm_displayRoute (via_places, rStart, rEnd, itemIds, timestamps[i]);
 				gm_displayRoute (via_places, rStart, rEnd, itemIds, sNId + ":" + sNName + ":" + rId);
@@ -728,7 +722,6 @@ function gm_displayRoute (id_place_pairs, rStart, rEnd, itemIds, stamp) {
 	
 	infoWindow = new google.maps.InfoWindow();
 	var i = 0;
-	
 	temp2(i, waypoints, 0, rStart, rEnd, itemIds, stamp);
 }
 
@@ -754,14 +747,12 @@ function gm_removeRoute (stamp) {// stamp example: 100004981873901:Facebook:0 sn
 			routes[key].setMap(null);
 			delete routes[key];
 		} else {
-			console.log('not remove' + stamp + " " + key);// because other routes exist on map
 		}
 	}
 }
 
 
 function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
-	console.log (uId + " " + sNName + " " + sId + " " + sPlace + " " + sMsg + " " + rId) ;
 	if (sPlace) {
 		var contentString;
 		if (sMsg) {
@@ -785,7 +776,6 @@ function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
 			var mLat = markerPosition[Object.keys(markerPosition)[0]];
 			var mLon = markerPosition[Object.keys(markerPosition)[1]];
 			if ( Math.abs(mLat - lat) < 0.00000000001 && Math.abs(mLon - lon) < 0.00000000001) {
-				console.log(obj);
 				marker = currMarkers[i];
 				// Push status/checkin to routesItems objects array. 
 				
@@ -802,7 +792,6 @@ function gm_displayStatus (uId, sNName, sId, sPlace, sMsg, rId) {
 		}
 		
 		if (!marker) {
-			console.log("new marker");
 			var markerIcon = 'static/marker_blue.png';
 			var markerLatLong = new google.maps.LatLng( lat, lon );
 			marker = new google.maps.Marker({
